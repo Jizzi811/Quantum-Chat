@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QUANTUM — Dein AI Worker</title>
+  <meta name="description" content="Quantum — dein persönlicher AI Worker mit Skills und Automationen." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/quantum.css" />
+  <link rel="stylesheet" href="css/chat.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚛️</text></svg>" />
+</head>
+<body>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-orb bg-orb--cyan" aria-hidden="true"></div>
+  <div class="bg-orb bg-orb--magenta" aria-hidden="true"></div>
+  <div class="scanlines" aria-hidden="true"></div>
+
+  <header class="q-header" data-testid="quantum-header">
+    <div class="q-logo">
+      <img class="q-logo__bot" src="assets/robot.png" alt="Quantum Roboter-Maskottchen"
+           onerror="this.hidden=true; this.nextElementSibling.hidden=false;" />
+      <span class="q-logo__atom" hidden aria-hidden="true">⚛</span>
+      <h1 class="q-logo__text" data-text="QUANTUM">QUANTUM</h1>
+      <span class="q-logo__tag">DEIN AI WORKER</span>
+    </div>
+    <div class="q-status" data-testid="quantum-status">
+      <span class="q-status__dot" aria-hidden="true"></span>
+      <span class="q-status__label">ONLINE</span>
+      <span class="q-status__sep">|</span>
+      <span class="q-status__clock" id="q-clock">--:--:--</span>
+    </div>
+  </header>
+
+  <main class="q-layout">
+    <!-- ══════════ SKILLS PANEL ══════════ -->
+    <aside class="q-panel q-panel--skills" data-testid="skills-panel">
+      <div class="q-panel__head">
+        <h2 class="q-panel__title q-panel__title--cyan">◈ SKILLS</h2>
+        <span class="q-panel__count" id="skills-count">0</span>
+      </div>
+      <p class="q-panel__hint">Skills erweitern, was Quantum kann. Klick auf einen Skill, um ihn direkt zu starten — oder toggle ihn an/aus.</p>
+      <ul class="skill-list" id="skill-list" data-testid="skill-list"></ul>
+    </aside>
+
+    <!-- ══════════ CHAT WINDOW ══════════ -->
+    <section class="chat-frame" data-testid="chat-frame">
+      <div class="chat-frame__border" aria-hidden="true"></div>
+      <div class="chat-window">
+        <div class="chat-window__head">
+          <div class="chat-window__lights" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </div>
+          <span class="chat-window__title">quantum://neural-link</span>
+          <button class="chat-window__menu-btn" id="btn-skillmenu" data-testid="skill-menu-btn" title="Alle Skills anzeigen">◈ SKILLS</button>
+          <button class="chat-window__clear" id="btn-clear" data-testid="clear-chat-btn" title="Chat leeren">⟲</button>
+        </div>
+        <div class="skill-menu" id="skill-menu" data-testid="skill-menu" hidden></div>
+        <div class="chat-messages" id="chat-messages" data-testid="chat-messages" aria-live="polite"></div>
+        <div class="chat-typing" id="chat-typing" hidden>
+          <span class="chat-typing__orb" aria-hidden="true"></span>
+          <span>Quantum denkt</span>
+          <span class="chat-typing__dots"><i></i><i></i><i></i></span>
+        </div>
+        <form class="chat-input" id="chat-form" data-testid="chat-form" autocomplete="off">
+          <input
+            type="text"
+            id="chat-input-field"
+            class="chat-input__field"
+            data-testid="chat-input"
+            placeholder="Frag Quantum irgendwas… (/help für Befehle)"
+            maxlength="500"
+          />
+          <button type="button" class="chat-input__mic" id="btn-mic" data-testid="mic-btn" title="Diktieren">🎤</button>
+          <button type="submit" class="chat-input__send" data-testid="send-btn">
+            <span>SENDEN</span>
+            <span class="chat-input__bolt" aria-hidden="true">⚡</span>
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ══════════ AUTOMATIONS PANEL ══════════ -->
+    <aside class="q-panel q-panel--autos" data-testid="automations-panel">
+      <div class="q-panel__head">
+        <h2 class="q-panel__title q-panel__title--magenta">⟳ AUTOMATIONEN</h2>
+        <span class="q-panel__count" id="autos-count">0</span>
+      </div>
+      <p class="q-panel__hint">Quantum arbeitet auch, wenn du nicht da bist: zeitgesteuert oder wenn ein Ereignis eintritt.</p>
+
+      <form class="auto-form" id="auto-form" data-testid="automation-form">
+        <input type="text" id="auto-name" class="auto-form__input" placeholder="Name der Automation" maxlength="60" required data-testid="automation-name-input" />
+        <select id="auto-trigger" class="auto-form__input" data-testid="automation-trigger-select">
+          <option value="interval">⏱ Alle X Minuten</option>
+          <option value="daily">🕘 Täglich um Uhrzeit</option>
+          <option value="keyword">💬 Wenn Nachricht Stichwort enthält</option>
+          <option value="startup">🚀 Bei jedem Start</option>
+        </select>
+        <input type="text" id="auto-param" class="auto-form__input" placeholder="z. B. 5 (Min), 09:00 oder Stichwort" maxlength="40" data-testid="automation-param-input" />
+        <select id="auto-action" class="auto-form__input" data-testid="automation-action-select"></select>
+        <input type="text" id="auto-payload" class="auto-form__input" placeholder="Eingabe für die Aktion (optional)" maxlength="120" data-testid="automation-payload-input" />
+        <button type="submit" class="auto-form__submit" data-testid="automation-create-btn">+ AUTOMATION ERSTELLEN</button>
+      </form>
+
+      <ul class="auto-list" id="auto-list" data-testid="automation-list"></ul>
+
+      <div class="auto-log">
+        <h3 class="auto-log__title">▸ AKTIVITÄTS-LOG</h3>
+        <ul class="auto-log__list" id="auto-log" data-testid="automation-log"></ul>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="q-footer">
+    <span>QUANTUM v1.0 — eigenständige Demo, inspiriert vom Konzept „AI Worker mit Skills &amp; Automationen“. Läuft komplett lokal in deinem Browser.</span>
+  </footer>
+
+  <script src="js/skills.js"></script>
+  <script src="js/ai-client.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/automations.js"></script>
+  <script src="js/documents.js"></script>
+  <script src="js/soultrace.js"></script>
+  <script src="js/agents-live.js"></script>
+  <script src="js/agents-tools.js"></script>
+  <script src="js/agents-personal.js"></script>
+  <script src="js/codereview.js"></script>
+  <script src="js/game-agent.js"></script>
+  <script src="js/ai-agents.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
