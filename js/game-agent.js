@@ -46,9 +46,12 @@ window.Quantum = window.Quantum || {};
 
   function review(html) {
     const issues = BLOCKED.filter((rule) => rule.test(html)).map((rule) => 'Unsichere Browser-API: ' + rule);
-    ['<!doctype html>', '</script>', '</body>', '</html>', 'SPIEL STARTEN'].forEach((required) => {
+    ['<!doctype html>', '</script>', '</body>', '</html>'].forEach((required) => {
       if (!html.toLowerCase().includes(required.toLowerCase())) issues.push('Fehlt: ' + required);
     });
+    if (!/<button\b/i.test(html) && !/(start|play|restart|neustart|nochmal)/i.test(html)) {
+      issues.push('Es fehlt eine erkennbare Start- oder Neustart-Steuerung.');
+    }
     return { approved: issues.length === 0, issues };
   }
 
@@ -84,10 +87,10 @@ window.Quantum = window.Quantum || {};
       let model = 'lokaler Fallback';
       try {
         const result = await window.Quantum.ai.ask({
-          system: 'You are a browser game studio with four roles: designer, builder, reviewer and repair agent. Return only one complete standalone HTML document with embedded CSS and JavaScript. It must be immediately playable and responsive, with visible instructions, keyboard or pointer controls, objective, score or timer, win/loss state and restart. Do not use markdown fences, external assets, libraries, network calls, browser storage, navigation, iframe, object or embed.',
-          prompt: 'Create and internally review this browser game: ' + prompt,
+          system: 'You are a browser game studio. Return only one compact complete standalone HTML document with embedded CSS and JavaScript, under 300 lines. It must be immediately playable and responsive, with instructions, controls, objective, score, win/loss and a start or restart button. No explanation, markdown fences, external assets, libraries, network calls, browser storage, navigation, iframe, object or embed.',
+          prompt: 'Create this compact browser game: ' + prompt,
           temperature: 0.45,
-          maxTokens: 9000,
+          maxTokens: 4000,
         });
         const fenced = String(result.text).match(/```(?:html)?\s*([\s\S]*?)```/i);
         html = (fenced ? fenced[1] : result.text).trim();
