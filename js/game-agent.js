@@ -92,8 +92,9 @@ window.Quantum = window.Quantum || {};
         const fenced = String(result.text).match(/```(?:html)?\s*([\s\S]*?)```/i);
         html = (fenced ? fenced[1] : result.text).trim();
         model = result.model;
-      } catch (_) {
+      } catch (error) {
         html = build(spec);
+        model = 'lokaler Fallback – ' + (error.message || 'NVIDIA nicht erreichbar');
       }
       let report = review(html);
       let repaired = false;
