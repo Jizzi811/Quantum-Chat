@@ -39,7 +39,13 @@ Ein noch vorhandener `NVIDIA_API_KEY` stört also nicht: sobald
 | Modell | Eignung |
 | --- | --- |
 | `llama-3.3-70b-versatile` | Standard: Chat + Spiele-Generierung, gutes Allround-Modell |
+| `openai/gpt-oss-120b` | Stärker bei Code/Spielen, lohnt ein Experiment via `GROQ_MODEL` |
+| `qwen/qwen3-32b` | Ebenfalls gut bei Code, schnelle Alternative |
 | `llama-3.1-8b-instant` | Sehr schnell und sparsam beim Rate-Limit, einfachere Antworten |
+
+Modell wechseln: in Netlify `GROQ_MODEL` auf die gewünschte ID setzen und neu
+deployen. Die exakten IDs und aktuellen Free-Tier-Limits stehen unter
+<https://console.groq.com/docs/models>.
 
 Ist ein konfiguriertes Modell nicht mehr verfügbar (HTTP 404/410), wechselt
 das Gateway automatisch auf das Standardmodell zurück.
