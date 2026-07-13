@@ -128,6 +128,25 @@
   text-shadow: var(--glow-cyan), 0 0 60px rgba(157, 77, 255, 0.7);
 }
 
+/* ── Quantum-Core: das lebendige Marken-Herz im Hero ──────────── */
+
+.core-wrap {
+  width: min(56vw, 230px);
+  aspect-ratio: 1 / 1;
+  margin: -0.4rem auto 0.2rem;
+  pointer-events: none;
+}
+
+.core-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+@media (max-width: 720px) {
+  .core-wrap { width: min(48vw, 170px); }
+}
+
 .landing__tag {
   margin: 0.5rem 0 1.4rem;
   color: var(--text-dim);

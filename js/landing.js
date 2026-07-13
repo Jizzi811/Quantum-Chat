@@ -156,14 +156,20 @@ window.Quantum = window.Quantum || {};
     landing.classList.remove('landing--closing');
     refreshHint();
     startAurora();
-    if (!coarse) tokenInput.focus();
+    if (window.Quantum.core) window.Quantum.core.start();
+    /* preventScroll: die Karte soll oben beim Core starten, nicht zum
+       Eingabefeld springen */
+    if (!coarse) tokenInput.focus({ preventScroll: true });
   }
 
   function close() {
+    /* Der Core öffnet sich (Licht-Burst) und zieht in den Workspace */
+    if (window.Quantum.core) window.Quantum.core.burst();
     landing.classList.add('landing--closing');
     setTimeout(() => {
       landing.hidden = true;
       stopAurora();
+      if (window.Quantum.core) window.Quantum.core.stop();
     }, 620);
     try { sessionStorage.setItem('quantum.landing.seen', '1'); } catch (_) { /* privater Modus */ }
   }
