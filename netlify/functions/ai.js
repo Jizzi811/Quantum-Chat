@@ -2,8 +2,13 @@ const { contentToText } = require('../../js/model-response.js');
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const NVIDIA_URL = 'https://integrate.api.nvidia.com/v1/chat/completions';
-const NVIDIA_DEFAULT_MODEL = 'nvidia/nemotron-3-super-120b-a12b';
+const NVIDIA_MODELS_URL = 'https://integrate.api.nvidia.com/v1/models';
+const NVIDIA_DEFAULT_MODEL = 'qwen/qwen3.5-122b-a10b';
 const requests = new Map();
+
+/* Merkt sich pro Lambda-Instanz einen funktionierenden Modell-Tausch,
+   damit ein totes konfiguriertes Modell nicht jede Anfrage doppelt kostet. */
+let modelSwap = null;
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
@@ -42,42 +47,35 @@ exports.handler = async (event) => {
   try {
     const provider = nvidiaKey ? 'nvidia' : 'openrouter';
     const apiKey = nvidiaKey || openRouterKey;
-    const model = provider === 'nvidia'
+    let model = provider === 'nvidia'
       ? (envValue('NVIDIA_MODEL') || NVIDIA_DEFAULT_MODEL)
       : (envValue('OPENROUTER_MODEL') || 'openrouter/free');
-    const upstream = await fetch(provider === 'nvidia' ? NVIDIA_URL : OPENROUTER_URL, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        ...(provider === 'openrouter' ? {
-          'HTTP-Referer': event.headers.origin || event.headers.referer || 'https://quantum.local',
-          'X-Title': 'Quantum Neon Chat',
-        } : {}),
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: 'system', content: system },
-          { role: 'user', content: prompt },
-        ],
-        temperature: provider === 'nvidia' ? 1.0 : (Number.isFinite(Number(body.temperature)) ? Number(body.temperature) : 0.35),
-        ...(provider === 'nvidia' ? { top_p: 0.95 } : {}),
-        max_tokens: Math.min(Math.max(Number(body.maxTokens) || 7000, 256), 12000),
-      }),
-    });
-    const contentType = upstream.headers.get('content-type') || 'unbekannt';
-    const raw = await upstream.text();
-    let data = null;
-    let parseError = null;
-    try {
-      data = raw ? JSON.parse(raw) : null;
-    } catch (error) {
-      parseError = error;
+    if (modelSwap && modelSwap.failed === model) model = modelSwap.works;
+
+    let attempt = await callUpstream({ provider, apiKey, model, system, prompt, body, event });
+
+    /* Konfiguriertes Modell existiert nicht mehr (404) oder ist End-of-Life
+       (410): einmal automatisch mit dem Default-Modell erneut versuchen und
+       sich den funktionierenden Tausch für diese Lambda-Instanz merken. */
+    if (modelGone(attempt) && provider === 'nvidia' && model !== NVIDIA_DEFAULT_MODEL) {
+      logUpstreamIssue({
+        status: attempt.upstream.status, model, provider, contentType: attempt.contentType, raw: attempt.raw,
+        message: `Modell nicht mehr verfügbar – automatischer Retry mit ${NVIDIA_DEFAULT_MODEL}`,
+      });
+      const retry = await callUpstream({ provider, apiKey, model: NVIDIA_DEFAULT_MODEL, system, prompt, body, event });
+      if (retry.upstream.ok) modelSwap = { failed: model, works: NVIDIA_DEFAULT_MODEL };
+      attempt = retry;
+      model = NVIDIA_DEFAULT_MODEL;
     }
 
+    const { upstream, contentType, raw, data, parseError } = attempt;
+
     if (!upstream.ok) {
-      const cause = data?.error?.message || data?.detail || 'siehe Server-Log';
+      let cause = data?.error?.message || data?.detail || 'siehe Server-Log';
+      if (modelGone(attempt) && provider === 'nvidia') {
+        const available = await suggestModels(apiKey, model);
+        if (available.length) cause += ` — verfügbare Modelle z. B.: ${available.join(', ')}`;
+      }
       logUpstreamIssue({ status: upstream.status, model, provider, contentType, raw, message: cause });
       return response(upstream.status, {
         error: `${provider}-Anfrage fehlgeschlagen (HTTP ${upstream.status}): ${cause}`,
@@ -118,6 +116,63 @@ exports.handler = async (event) => {
     return response(502, { error: error.message || 'The configured AI provider is unavailable.' });
   }
 };
+
+/* Führt einen Chat-Completions-Aufruf aus und liest die Antwort abgesichert
+   als Text + optional geparstes JSON. */
+async function callUpstream({ provider, apiKey, model, system, prompt, body, event }) {
+  const upstream = await fetch(provider === 'nvidia' ? NVIDIA_URL : OPENROUTER_URL, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      ...(provider === 'openrouter' ? {
+        'HTTP-Referer': event.headers.origin || event.headers.referer || 'https://quantum.local',
+        'X-Title': 'Quantum Neon Chat',
+      } : {}),
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user', content: prompt },
+      ],
+      temperature: provider === 'nvidia' ? 1.0 : (Number.isFinite(Number(body.temperature)) ? Number(body.temperature) : 0.35),
+      ...(provider === 'nvidia' ? { top_p: 0.95 } : {}),
+      max_tokens: Math.min(Math.max(Number(body.maxTokens) || 7000, 256), 12000),
+    }),
+  });
+  const contentType = upstream.headers.get('content-type') || 'unbekannt';
+  const raw = await upstream.text();
+  let data = null;
+  let parseError = null;
+  try {
+    data = raw ? JSON.parse(raw) : null;
+  } catch (error) {
+    parseError = error;
+  }
+  return { upstream, contentType, raw, data, parseError };
+}
+
+// 404 = Modell unbekannt, 410 = Modell End-of-Life
+function modelGone(attempt) {
+  return !attempt.upstream.ok && (attempt.upstream.status === 404 || attempt.upstream.status === 410);
+}
+
+/* Fragt NVIDIAs Modellliste ab und liefert bis zu acht verfügbare IDs —
+   bevorzugt aus derselben Modellfamilie wie das gewünschte Modell. */
+async function suggestModels(apiKey, wanted) {
+  try {
+    const res = await fetch(NVIDIA_MODELS_URL, { headers: { Authorization: `Bearer ${apiKey}` } });
+    if (!res.ok) return [];
+    const data = JSON.parse(await res.text());
+    const ids = (data.data || []).map((entry) => entry.id).filter(Boolean);
+    const family = String(wanted).split('/')[0].toLowerCase();
+    const sameFamily = ids.filter((id) => id.toLowerCase().startsWith(family + '/'));
+    return (sameFamily.length ? sameFamily : ids).slice(0, 8);
+  } catch (_) {
+    return [];
+  }
+}
 
 /* Liest eine Umgebungsvariable und bereinigt typische Paste-Fehler aus dem
    Netlify-UI: der Variablenname landet mit im Wert ("NVIDIA_MODEL=qwen/…"),

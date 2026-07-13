@@ -129,6 +129,79 @@ test('Env-Var-Werte mit Variablenname-Präfix und Quotes werden bereinigt', asyn
   process.env.NVIDIA_API_KEY = 'test-nvidia-key-123';
 });
 
+test('EOL-Modell (HTTP 410): automatischer Retry mit dem Default-Modell', () =>
+  captureErrors(async () => {
+    process.env.NVIDIA_MODEL = 'qwen/qwen3-coder-480b-a35b-instruct';
+    const calls = [];
+    global.fetch = async (url, options) => {
+      const body = JSON.parse(options.body);
+      calls.push(body.model);
+      if (body.model === 'qwen/qwen3-coder-480b-a35b-instruct') {
+        return {
+          ok: false, status: 410,
+          headers: { get: () => 'application/json' },
+          text: async () => JSON.stringify({ error: { message: "The model has reached its end of life" } }),
+        };
+      }
+      return {
+        ok: true, status: 200,
+        headers: { get: () => 'application/json' },
+        text: async () => JSON.stringify({ model: body.model, choices: [{ message: { content: '<html></html>' } }] }),
+      };
+    };
+    const result = await handler(makeEvent());
+    assert.equal(result.statusCode, 200);
+    const payload = JSON.parse(result.body);
+    assert.deepEqual(calls, ['qwen/qwen3-coder-480b-a35b-instruct', 'qwen/qwen3.5-122b-a10b']);
+    assert.equal(payload.model, 'qwen/qwen3.5-122b-a10b');
+    delete process.env.NVIDIA_MODEL;
+  }));
+
+test('nach erfolgreichem Retry wird direkt das funktionierende Modell verwendet', async () => {
+  process.env.NVIDIA_MODEL = 'qwen/qwen3-coder-480b-a35b-instruct';
+  const calls = [];
+  global.fetch = async (url, options) => {
+    const body = JSON.parse(options.body);
+    calls.push(body.model);
+    return {
+      ok: true, status: 200,
+      headers: { get: () => 'application/json' },
+      text: async () => JSON.stringify({ choices: [{ message: { content: 'ok' } }] }),
+    };
+  };
+  const result = await handler(makeEvent());
+  assert.equal(result.statusCode, 200);
+  assert.deepEqual(calls, ['qwen/qwen3.5-122b-a10b'], 'gemerktes Modell aus vorherigem Retry wird direkt genutzt');
+  delete process.env.NVIDIA_MODEL;
+});
+
+test('404 auf dem Default-Modell: Fehler nennt verfügbare Modelle aus /v1/models', () =>
+  captureErrors(async () => {
+    global.fetch = async (url, options) => {
+      if (String(url).endsWith('/models')) {
+        return {
+          ok: true, status: 200,
+          headers: { get: () => 'application/json' },
+          text: async () => JSON.stringify({ data: [
+            { id: 'qwen/qwen3.5-397b-a17b' },
+            { id: 'meta/llama-3.3-70b-instruct' },
+            { id: 'qwen/qwen3-next-80b-a3b-instruct' },
+          ] }),
+        };
+      }
+      return {
+        ok: false, status: 404,
+        headers: { get: () => 'application/json' },
+        text: async () => JSON.stringify({ detail: 'Not Found' }),
+      };
+    };
+    const result = await handler(makeEvent());
+    assert.equal(result.statusCode, 404);
+    const payload = JSON.parse(result.body);
+    assert.match(payload.error, /qwen\/qwen3\.5-397b-a17b/);
+    assert.match(payload.error, /qwen\/qwen3-next-80b-a3b-instruct/);
+  }));
+
 test('Netzwerkfehler wird geloggt und als 502 gemeldet', () =>
   captureErrors(async (logged) => {
     global.fetch = async () => { throw new Error('socket hang up'); };
