@@ -20,7 +20,8 @@ window.open = () => ({});
 
 vm.runInThisContext(fs.readFileSync(path.join(__dirname, '../js/game-agent.js'), 'utf8'));
 
-const VALID_GAME_HTML = '<!doctype html><html><body><button id="start">Start</button>'
+const VALID_GAME_HTML = '<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head>'
+  + '<body><button id="start">Start</button>'
   + '<script>document.querySelector("#start").onclick=()=>{};<\/script></body></html>';
 
 test.beforeEach(() => { delete Quantum.ai.askStream; });
@@ -121,6 +122,17 @@ test('KI-Spiel mit kaputtem JavaScript: lokaler Fallback statt toter Hülle oder
   assert.match(output, /nicht spielbar/);
   assert.match(output, /lokaler Fallback aktiv/);
   assert.match(output, /openai\/gpt-oss-120b/);
+});
+
+test('review verlangt Viewport-Meta, repair rüstet es nach (Handy-Optimierung)', () => {
+  const noViewport = '<!doctype html><html><head><title>x</title></head><body><button id="start">Start</button>'
+    + '<script>let x=1;</script></body></html>';
+  const report = Quantum.gameAgent.review(noViewport);
+  assert.equal(report.approved, false);
+  assert.ok(report.issues.some((issue) => /viewport/i.test(issue)), report.issues.join('; '));
+  const fixed = Quantum.gameAgent.repair(noViewport);
+  assert.match(fixed, /<head[^>]*><meta name="viewport"/i);
+  assert.equal(Quantum.gameAgent.review(fixed).approved, true);
 });
 
 test('repair schließt abgeschnittene script/body/html-Tags und ergänzt den Doctype', () => {
