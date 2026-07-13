@@ -4,6 +4,9 @@ const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const NVIDIA_URL = 'https://integrate.api.nvidia.com/v1/chat/completions';
 const NVIDIA_MODELS_URL = 'https://integrate.api.nvidia.com/v1/models';
 const NVIDIA_DEFAULT_MODEL = 'qwen/qwen3.5-122b-a10b';
+/* Netlify bricht synchrone Functions nach 10 s hart ab (nackter 504 ohne
+   JSON). Wir brechen früher selbst ab und liefern eine erklärende Antwort. */
+const UPSTREAM_TIMEOUT_MS = 8500;
 const requests = new Map();
 
 /* Merkt sich pro Lambda-Instanz einen funktionierenden Modell-Tausch,
@@ -105,15 +108,25 @@ exports.handler = async (event) => {
     }
     return response(200, { text, model: data.model || model, provider });
   } catch (error) {
+    const timedOut = error.name === 'TimeoutError' || error.name === 'AbortError';
+    const model = envValue('NVIDIA_MODEL') || NVIDIA_DEFAULT_MODEL;
+    const provider = nvidiaKey ? 'nvidia' : 'openrouter';
     logUpstreamIssue({
-      status: 'kein HTTP-Status (Netzwerkfehler)',
-      model: envValue('NVIDIA_MODEL') || NVIDIA_DEFAULT_MODEL,
-      provider: nvidiaKey ? 'nvidia' : 'openrouter',
+      status: timedOut ? `Timeout nach ${UPSTREAM_TIMEOUT_MS} ms` : 'kein HTTP-Status (Netzwerkfehler)',
+      model,
+      provider,
       contentType: 'unbekannt',
       raw: '',
       message: error.message || 'unbekannter Fehler',
     });
-    return response(502, { error: error.message || 'The configured AI provider is unavailable.' });
+    if (timedOut) {
+      return response(504, {
+        error: `Zeitlimit erreicht: Das Modell hat nicht innerhalb von ${Math.round(UPSTREAM_TIMEOUT_MS / 1000)} s geantwortet. Bitte erneut versuchen oder die Aufgabe kürzer fassen.`,
+        model,
+        provider,
+      });
+    }
+    return response(502, { error: error.message || 'The configured AI provider is unavailable.', model, provider });
   }
 };
 
@@ -122,6 +135,7 @@ exports.handler = async (event) => {
 async function callUpstream({ provider, apiKey, model, system, prompt, body, event }) {
   const upstream = await fetch(provider === 'nvidia' ? NVIDIA_URL : OPENROUTER_URL, {
     method: 'POST',
+    signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     headers: {
       Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',

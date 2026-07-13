@@ -88,11 +88,14 @@ window.Quantum = window.Quantum || {};
       let usedFallback = false;
       let aiStatus;
       try {
+        /* Netlify-Limit: 10 s pro Function-Aufruf. Die Generierung muss knapp
+           bleiben, sonst reißt das Zeitlimit — daher kompaktes Spiel und
+           begrenzte Tokenzahl. */
         const result = await window.Quantum.ai.ask({
-          system: 'You are a browser game studio. Return only one compact complete standalone HTML document with embedded CSS and JavaScript, under 300 lines. It must be immediately playable and responsive, with instructions, controls, objective, score, win/loss and a start or restart button. No explanation, markdown fences, external assets, libraries, network calls, browser storage, navigation, iframe, object or embed.',
+          system: 'You are a browser game studio. Return only one minimal complete standalone HTML document with embedded CSS and JavaScript, at most 120 lines, no comments, compact code. It must be immediately playable and responsive with objective, score, win/loss and a start or restart button. No explanation, markdown fences, external assets, libraries, network calls, browser storage, navigation, iframe, object or embed. Speed matters: keep it as short as possible.',
           prompt: 'Create this compact browser game: ' + prompt,
           temperature: 0.45,
-          maxTokens: 4000,
+          maxTokens: 2200,
         });
         const extracted = window.Quantum.modelResponse.extractHtml(result.text);
         if (extracted) {

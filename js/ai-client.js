@@ -26,7 +26,11 @@ window.Quantum = window.Quantum || {};
       if (retry) return request(payload, false);
     }
     if (!res.ok) {
-      const error = new Error(data.error || ('Quantum AI Gateway Fehler (HTTP ' + res.status + ').'));
+      /* 504 ohne JSON-Body = Netlify hat die Function nach 10 s abgebrochen */
+      const fallbackMsg = res.status === 504
+        ? 'Zeitlimit überschritten (HTTP 504): Das Modell hat zu lange gebraucht. Bitte erneut versuchen.'
+        : 'Quantum AI Gateway Fehler (HTTP ' + res.status + ').';
+      const error = new Error(data.error || fallbackMsg);
       if (data.model) error.model = data.model;
       if (data.provider) error.provider = data.provider;
       throw error;
