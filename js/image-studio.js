@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════
    QUANTUM — Bild-Studio
    Skill "bild": erzeugt Bilder aus Text über die Netlify-Function
-   /image (Google Imagen via separatem GEMINI_IMAGE_API_KEY).
+   /image (Gemini Bildgenerierung via separatem GEMINI_IMAGE_API_KEY).
    ═══════════════════════════════════════════════════════════════ */
 
 window.Quantum = window.Quantum || {};
@@ -88,7 +88,7 @@ window.Quantum = window.Quantum || {};
         imgEl.src = result.image;
         downloadEl.href = result.image;
         resultEl.hidden = false;
-        setStatus('✓ Fertig (' + (result.model || 'Imagen') + ')', 'ok');
+        setStatus('✓ Fertig (' + (result.model || 'Gemini') + ')', 'ok');
       } catch (error) {
         setStatus('⚠ ' + (error.message || 'Bildgeneration fehlgeschlagen.'), 'error');
       } finally {
@@ -114,7 +114,7 @@ window.Quantum = window.Quantum || {};
 
   window.Quantum.skills.register({
     id: 'bild', icon: '🎨', name: 'Bild-Studio',
-    desc: 'Erzeugt Bilder aus Text (Gemini/Imagen)',
+    desc: 'Erzeugt Bilder aus Text (Gemini)',
     usage: '/skill bild Neon-Cyberpunk-Stadt bei Regen',
     run(input) {
       open(input.trim());

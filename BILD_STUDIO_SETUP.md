@@ -1,6 +1,6 @@
-# Bild-Studio einrichten (Gemini / Imagen)
+# Bild-Studio einrichten (Gemini Bildgenerierung)
 
-Das Bild-Studio (`/skill bild`) erzeugt Bilder über Google Imagen.
+Das Bild-Studio (`/skill bild`) erzeugt Bilder über Geminis native Bildgenerierung.
 Die Function `netlify/functions/image.js` nutzt dafür einen **eigenen** Key.
 
 ## ⚠ Wichtig: eigener Key nur für Bilder
@@ -17,12 +17,11 @@ Dein Chat bleibt dadurch unverändert auf deinem bestehenden Key (z. B. OpenAI/C
 |---|---|---|
 | `GEMINI_IMAGE_API_KEY` | ✅ | Google-AI-Studio-Key — **nur** für Bilder ([aistudio.google.com/apikey](https://aistudio.google.com/apikey)) |
 | `QUANTUM_ACCESS_TOKEN` | ✅ | Derselbe Zugangscode wie beim Chat |
-| `GEMINI_IMAGE_MODEL` | – | Default `imagen-3.0-generate-002` |
+| `GEMINI_IMAGE_MODEL` | – | Default `gemini-3.1-flash-image` |
 | `QUANTUM_ALLOWED_ORIGIN` | – | Origin-Schutz (wie beim Chat-Gateway) |
 
-> Hinweis: Nicht jeder Key hat Zugriff auf jedes Imagen-Modell. Falls eine
-> Fehlermeldung „HTTP 404/403" kommt, ein anderes Modell über `GEMINI_IMAGE_MODEL`
-> setzen (z. B. `imagen-3.0-fast-generate-001`).
+> Alte `imagen-*`-Werte werden automatisch auf das aktuelle Standardmodell
+> umgestellt, weil Imagen 3 nicht mehr über diesen API-Endpunkt verfügbar ist.
 
 ## Nutzung
 - Im Chat: `/skill bild <Beschreibung>` oder den Skill 🎨 links anklicken.

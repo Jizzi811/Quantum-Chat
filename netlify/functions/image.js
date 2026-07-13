@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════
-   QUANTUM — Bildgeneration (Google Imagen via Gemini API)
+   QUANTUM — Bildgeneration (Gemini Native Image Generation)
 
    WICHTIG: Diese Function nutzt AUSSCHLIESSLICH die eigene Variable
    GEMINI_IMAGE_API_KEY — niemals GEMINI_API_KEY. So bleibt der Chat
@@ -10,38 +10,53 @@
    - GEMINI_IMAGE_API_KEY   (Pflicht)  Google-AI-Studio-Key, nur für Bilder
    - QUANTUM_ACCESS_TOKEN   (Pflicht)  gleicher Zugangscode wie beim Chat
    Optional:
-   - GEMINI_IMAGE_MODEL     Default "imagen-3.0-generate-002"
+   - GEMINI_IMAGE_MODEL     Default "gemini-3.1-flash-image"
    - QUANTUM_ALLOWED_ORIGIN Origin-Schutz (wie beim Chat-Gateway)
    ═══════════════════════════════════════════════════════════════ */
 
 const { envValue, accessTokenList, isValidAccessToken, makeRateLimiter } = require('./quantum-shared.js');
 
-const UPSTREAM_TIMEOUT_MS = 9000;
-const DEFAULT_MODEL = 'imagen-3.0-generate-002';
+const UPSTREAM_TIMEOUT_MS = 60000;
+const DEFAULT_MODEL = 'gemini-3.1-flash-image';
 const withinRateLimit = makeRateLimiter(6, 60000);
 const ALLOWED_RATIOS = ['1:1', '3:4', '4:3', '9:16', '16:9'];
 
 /* Reine Helfer → per Unit-Test abgedeckt. */
-function predictUrl(model, key) {
-  return `https://generativelanguage.googleapis.com/v1beta/models/${model}:predict?key=${encodeURIComponent(key)}`;
+function generateContentUrl(model, key) {
+  return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
+}
+
+/* Alte Imagen-Einstellungen dürfen das neue generateContent-API nicht brechen. */
+function resolveModel(configuredModel) {
+  const model = String(configuredModel || '').trim();
+  return !model || model.startsWith('imagen-') ? DEFAULT_MODEL : model;
 }
 
 function buildImageBody({ prompt, aspectRatio }) {
   const ratio = ALLOWED_RATIOS.includes(aspectRatio) ? aspectRatio : '1:1';
   return {
-    instances: [{ prompt }],
-    parameters: { sampleCount: 1, aspectRatio: ratio },
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    generationConfig: {
+      responseModalities: ['TEXT', 'IMAGE'],
+      imageConfig: { aspectRatio: ratio },
+    },
   };
 }
 
-/* Zieht das erste Bild als Data-URL aus der Imagen-Antwort. */
+/* Zieht das erste Bild als Data-URL aus der Gemini-Antwort. */
 function extractImage(data) {
-  const prediction = data && Array.isArray(data.predictions) ? data.predictions[0] : null;
-  if (!prediction) return null;
-  const b64 = prediction.bytesBase64Encoded || prediction.image?.bytesBase64Encoded;
-  if (!b64) return null;
-  const mime = prediction.mimeType || 'image/png';
-  return `data:${mime};base64,${b64}`;
+  const candidates = data && Array.isArray(data.candidates) ? data.candidates : [];
+  for (const candidate of candidates) {
+    const parts = candidate && candidate.content && Array.isArray(candidate.content.parts) ? candidate.content.parts : [];
+    for (const part of parts) {
+      const inline = part.inlineData || part.inline_data;
+      if (inline && inline.data) {
+        const mime = inline.mimeType || inline.mime_type || 'image/png';
+        return `data:${mime};base64,${inline.data}`;
+      }
+    }
+  }
+  return null;
 }
 
 exports.handler = async (event) => {
@@ -68,10 +83,10 @@ exports.handler = async (event) => {
   const prompt = String(body.prompt || '').trim();
   if (!prompt || prompt.length > 4000) return response(400, { error: 'Prompt ist leer oder zu lang.' });
 
-  const model = envValue('GEMINI_IMAGE_MODEL') || DEFAULT_MODEL;
+  const model = resolveModel(envValue('GEMINI_IMAGE_MODEL'));
 
   try {
-    const upstream = await fetch(predictUrl(model, key), {
+    const upstream = await fetch(generateContentUrl(model, key), {
       method: 'POST',
       signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
       headers: { 'Content-Type': 'application/json' },
@@ -83,7 +98,7 @@ exports.handler = async (event) => {
 
     if (!upstream.ok) {
       const message = (data && (data.error?.message || data.error)) || `HTTP ${upstream.status}`;
-      console.error('[quantum-image] Imagen-Fehler', { status: upstream.status, model, message: String(message).slice(0, 300) });
+      console.error('[quantum-image] Gemini-Bildfehler', { status: upstream.status, model, message: String(message).slice(0, 300) });
       return response(upstream.status, { error: `Bildgeneration fehlgeschlagen (HTTP ${upstream.status}): ${message}`, model });
     }
     const image = extractImage(data);
@@ -111,6 +126,7 @@ function response(statusCode, body) {
   };
 }
 
-module.exports.predictUrl = predictUrl;
+module.exports.generateContentUrl = generateContentUrl;
+module.exports.resolveModel = resolveModel;
 module.exports.buildImageBody = buildImageBody;
 module.exports.extractImage = extractImage;
