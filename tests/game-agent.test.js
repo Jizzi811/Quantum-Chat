@@ -23,6 +23,8 @@ vm.runInThisContext(fs.readFileSync(path.join(__dirname, '../js/game-agent.js'),
 const VALID_GAME_HTML = '<!doctype html><html><body><button id="start">Start</button>'
   + '<script>document.querySelector("#start").onclick=()=>{};<\/script></body></html>';
 
+test.beforeEach(() => { delete Quantum.ai.askStream; });
+
 test('Erfolg: Status "NVIDIA/Qwen erfolgreich" mit Modellname, kein Fallback', async () => {
   Quantum.ai.ask = async () => ({ text: '```html\n' + VALID_GAME_HTML + '\n```', model: 'qwen/qwen3-coder' });
   const output = await registeredSkill.run('Neon-Reaktionsspiel');
@@ -74,6 +76,22 @@ test('erfolgreicher Stream macht klassischen Aufruf überflüssig', async () => 
   Quantum.ai.ask = async () => { askCalls += 1; return { text: VALID_GAME_HTML }; };
   const output = await registeredSkill.run('Neon-Reaktionsspiel');
   assert.equal(askCalls, 0);
+  assert.match(output, /NVIDIA\/Qwen erfolgreich/);
+  delete Quantum.ai.askStream;
+});
+
+test('repair schließt abgeschnittene script/body/html-Tags und ergänzt den Doctype', () => {
+  const fixed = Quantum.gameAgent.repair('<html><body><button id="start">Start</button><script>let x=1;');
+  assert.match(fixed, /<\/script><\/body><\/html>$/);
+  assert.match(fixed, /^<!doctype html>/i);
+});
+
+test('am Token-Limit abgeschnittenes Spiel wird repariert statt abgelehnt', async () => {
+  const truncated = '<!doctype html><html><body><button id="start">Start</button><script>let s=0;function start(){s=1}';
+  Quantum.ai.askStream = async () => ({ text: truncated, model: 'qwen/qwen3.5-122b-a10b', finishReason: 'length' });
+  const output = await registeredSkill.run('Snake wie damals bei Nokia');
+  assert.ok(!output.includes('abgelehnt'), 'Spiel darf nicht abgelehnt werden:\n' + output);
+  assert.match(output, /Repair Agent: automatisch ausgeführt/);
   assert.match(output, /NVIDIA\/Qwen erfolgreich/);
   delete Quantum.ai.askStream;
 });

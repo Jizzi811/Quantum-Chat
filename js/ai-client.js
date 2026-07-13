@@ -66,6 +66,7 @@ window.Quantum = window.Quantum || {};
     const decoder = new TextDecoder();
     let buffer = '';
     let text = '';
+    let finishReason = null;
     for (;;) {
       const { done, value } = await reader.read();
       if (done) break;
@@ -80,7 +81,9 @@ window.Quantum = window.Quantum || {};
         try {
           const chunk = JSON.parse(payload);
           model = chunk.model || model;
-          const delta = chunk.choices?.[0]?.delta?.content || '';
+          const choice = chunk.choices?.[0];
+          if (choice?.finish_reason) finishReason = choice.finish_reason;
+          const delta = choice?.delta?.content || '';
           if (delta) {
             text += delta;
             if (onDelta) onDelta(text);
@@ -89,7 +92,7 @@ window.Quantum = window.Quantum || {};
       }
     }
     if (!text.trim()) throw new Error('Der Stream lieferte keinen Inhalt.');
-    return { text, model, provider };
+    return { text, model, provider, finishReason };
   }
 
   function hasAccess() {
