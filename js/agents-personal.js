@@ -172,7 +172,10 @@ window.Quantum = window.Quantum || {};
     const tts = window.Quantum.ttsStudio;
     if (!tts || !tts.generate) { speakBrowser(text); return; }
     try {
-      const result = await tts.generate({ text, instruction: voiceStyle(), cfg: 2.0, steps: 10 });
+      /* Kürzeres Zeitlimit im Gesprächs-Modus: reagiert VoxCPM nicht schnell
+         (schlafender Demo-Server), springt unten die Browser-Stimme ein,
+         statt den Nutzer minutenlang im Stillen warten zu lassen. */
+      const result = await tts.generate({ text, instruction: voiceStyle(), cfg: 2.0, steps: 10, timeout: 20000 });
       if (!voiceOn || seq !== speakSeq) return; /* abgeschaltet oder neuere Nachricht */
       const audio = new Audio(result.url);
       currentAudio = audio;
@@ -193,6 +196,46 @@ window.Quantum = window.Quantum || {};
 
   window.Quantum.bus.on('botmessage', speak);
 
+  /* Sichtbarer Umschalter im Header (🔈/🔊). Hält Status, Skill und
+     Button synchron — egal ob per Klick oder /skill voice geschaltet. */
+  function updateVoiceButton() {
+    const btn = document.getElementById('btn-voice');
+    if (!btn) return;
+    btn.textContent = voiceOn ? '🔊' : '🔈';
+    btn.setAttribute('aria-pressed', voiceOn ? 'true' : 'false');
+    btn.classList.toggle('q-status__key--on', voiceOn);
+    btn.title = voiceOn
+      ? 'Sprachausgabe AN — klicken zum Ausschalten'
+      : 'Sprachausgabe AUS — klicken, damit Quantum Antworten vorliest';
+  }
+
+  function setVoice(on, opts) {
+    opts = opts || {};
+    voiceOn = !!on;
+    try { localStorage.setItem(VOICE_KEY, voiceOn ? '1' : '0'); } catch (_) { /* egal */ }
+    if (!voiceOn) { stopSpeaking(); handsFree = false; }
+    updateVoiceButton();
+    /* Beim Einschalten per Klick sofort hörbar bestätigen: der Klick ist
+       eine User-Geste, daher darf Audio abspielen. Die Browser-Stimme
+       reagiert sofort; VoxCPM übernimmt ab der nächsten echten Antwort. */
+    if (voiceOn && opts.confirm) {
+      speakBrowser('Sprachausgabe aktiviert. Ich lese dir meine Antworten ab jetzt vor.');
+    }
+  }
+
+  const voiceBtn = document.getElementById('btn-voice');
+  if (voiceBtn) {
+    updateVoiceButton();
+    voiceBtn.addEventListener('click', () => {
+      setVoice(!voiceOn, { confirm: !voiceOn });
+      if (window.Quantum.ui && window.Quantum.ui.system) {
+        window.Quantum.ui.system(voiceOn
+          ? '🔊 Sprachausgabe **AN** — Quantum liest Antworten vor (VoxCPM-Stimme, Browser-Stimme als schneller Notnagel). Nochmal klicken schaltet ab.'
+          : '🔈 Sprachausgabe **AUS**.');
+      }
+    });
+  }
+
   window.Quantum.skills.register({
     id: 'voice', icon: '🎙', name: 'Voice-Agent',
     desc: 'Quantum spricht Antworten mit VoxCPM-Stimme (an/aus)',
@@ -210,9 +253,7 @@ window.Quantum = window.Quantum || {};
         return '🎙 Quantum-Stimme angepasst: „' + style[1].trim() + '". Gilt ab der nächsten Antwort (bei aktiver Sprachausgabe).';
       }
 
-      voiceOn = !voiceOn;
-      try { localStorage.setItem(VOICE_KEY, voiceOn ? '1' : '0'); } catch (_) { /* egal */ }
-      if (!voiceOn) { stopSpeaking(); handsFree = false; }
+      setVoice(!voiceOn, { confirm: false });
       return voiceOn
         ? '🎙 Sprachausgabe **AN** — Quantum spricht mit **VoxCPM-Stimme**. Diktierst du eine Frage über das 🎤, sende ich sie direkt ab und höre nach der Antwort wieder zu (Freisprech-Loop wie ein Support-Bot). Hinweis: Über den kostenlosen Demo-Server kann die erste Antwort einige Sekunden bis 1–2 Minuten dauern (Kaltstart). Klang ändern: `/skill voice stimme <Beschreibung>`. Nochmal `/skill voice` schaltet ab.'
         : '🎙 Sprachausgabe **AUS**.';
