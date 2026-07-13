@@ -202,6 +202,36 @@ test('404 auf dem Default-Modell: Fehler nennt verfügbare Modelle aus /v1/model
     assert.match(payload.error, /qwen\/qwen3-next-80b-a3b-instruct/);
   }));
 
+test('Upstream-Fetch bekommt ein Abbruchsignal (Schutz vor Netlify-10s-Limit)', async () => {
+  let sawSignal = false;
+  global.fetch = async (url, options) => {
+    sawSignal = !!options.signal;
+    return {
+      ok: true, status: 200,
+      headers: { get: () => 'application/json' },
+      text: async () => JSON.stringify({ choices: [{ message: { content: 'ok' } }] }),
+    };
+  };
+  const result = await handler(makeEvent());
+  assert.equal(result.statusCode, 200);
+  assert.ok(sawSignal, 'fetch muss mit AbortSignal-Timeout laufen');
+});
+
+test('Modell-Timeout liefert 504 mit klarer Ursache statt Netlify-Abbruch', () =>
+  captureErrors(async (logged) => {
+    global.fetch = async () => {
+      const error = new Error('The operation was aborted due to timeout');
+      error.name = 'TimeoutError';
+      throw error;
+    };
+    const result = await handler(makeEvent());
+    assert.equal(result.statusCode, 504);
+    const payload = JSON.parse(result.body);
+    assert.match(payload.error, /Zeitlimit/i);
+    assert.ok(payload.model, 'Timeout-Antwort nennt das Modell');
+    assert.match(logged.join('\n'), /Timeout/i);
+  }));
+
 test('Netzwerkfehler wird geloggt und als 502 gemeldet', () =>
   captureErrors(async (logged) => {
     global.fetch = async () => { throw new Error('socket hang up'); };
