@@ -7,6 +7,8 @@
 import {
   resolveProvider,
   fallbackModels,
+  fetchModelIds,
+  pickGeminiModel,
   envValue,
   safeEqual,
   makeRateLimiter,
@@ -56,9 +58,17 @@ export default async function handler(req) {
 
     /* Konfiguriertes Modell wird nicht angenommen (404/410): automatisch
        Alternativen probieren — bei Gemini die andere Namensform
-       ("gemini-…" ↔ "models/gemini-…"), sonst das Default-Modell. */
+       ("gemini-…" ↔ "models/gemini-…") und das beste Modell aus der
+       Modell-Liste (Google sperrt alte Modelle für neue Keys),
+       sonst das Default-Modell. */
     if (!upstream.ok && (upstream.status === 404 || upstream.status === 410)) {
-      for (const fallbackModel of fallbackModels(config, model)) {
+      const requestedModel = model;
+      const alternates = fallbackModels(config, requestedModel);
+      if (config.name === 'gemini') {
+        const pick = pickGeminiModel(await fetchModelIds(config));
+        if (pick && pick !== requestedModel && !alternates.includes(pick)) alternates.push(pick);
+      }
+      for (const fallbackModel of alternates) {
         console.error('[quantum-ai-stream] Modell nicht verfügbar, Retry', {
           httpStatus: upstream.status, provider, model, fallback: fallbackModel,
         });

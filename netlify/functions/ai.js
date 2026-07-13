@@ -2,6 +2,8 @@ const { contentToText } = require('../../js/model-response.js');
 const {
   resolveProvider,
   fallbackModels,
+  fetchModelIds,
+  pickGeminiModel,
   envValue,
   safeEqual,
   makeRateLimiter,
@@ -62,7 +64,14 @@ exports.handler = async (event) => {
        Lambda-Instanz merken. */
     if (modelGone(attempt)) {
       const requestedModel = model;
-      for (const fallbackModel of fallbackModels(config, requestedModel)) {
+      const alternates = fallbackModels(config, requestedModel);
+      /* Alle Namensformen und das Default-Modell tot (Google sperrt alte
+         Modelle für neue Keys): bestes Modell aus der Liste wählen. */
+      if (config.name === 'gemini') {
+        const pick = pickGeminiModel(await fetchModelIds(config));
+        if (pick && pick !== requestedModel && !alternates.includes(pick)) alternates.push(pick);
+      }
+      for (const fallbackModel of alternates) {
         logUpstreamIssue({
           status: attempt.upstream.status, model, provider, contentType: attempt.contentType, raw: attempt.raw,
           message: `Modell nicht verfügbar – automatischer Retry mit ${fallbackModel}`,
@@ -185,23 +194,14 @@ function upstreamErrorMessage(data) {
 /* Fragt die Modellliste des Providers ab und liefert bis zu acht verfügbare
    IDs — bevorzugt aus derselben Modellfamilie wie das gewünschte Modell. */
 async function suggestModels(config, wanted) {
-  try {
-    const res = await fetch(config.modelsUrl, {
-      headers: config.apiKey ? { Authorization: `Bearer ${config.apiKey}` } : {},
-    });
-    if (!res.ok) return [];
-    const data = JSON.parse(await res.text());
-    /* Nur Chat-taugliche Modelle vorschlagen (keine TTS-/Embedding-/Bild-
-       Varianten) und neueste Versionen zuerst zeigen. */
-    const ids = (data.data || []).map((entry) => entry.id).filter(Boolean)
-      .filter((id) => !/(tts|embedding|imagen|veo|audio|live|image)/i.test(id))
-      .sort().reverse();
-    const family = String(wanted).split('/')[0].toLowerCase();
-    const sameFamily = ids.filter((id) => id.toLowerCase().startsWith(family + '/'));
-    return (sameFamily.length ? sameFamily : ids).slice(0, 8);
-  } catch (_) {
-    return [];
-  }
+  /* Nur Chat-taugliche Modelle vorschlagen (keine TTS-/Embedding-/Bild-/
+     Musik-Varianten) und neueste Versionen zuerst zeigen. */
+  const ids = (await fetchModelIds(config))
+    .filter((id) => !/(tts|embedding|imagen|veo|audio|live|image|banana|lyria|robotics|learnlm|aqa)/i.test(id))
+    .sort().reverse();
+  const family = String(wanted).split('/')[0].toLowerCase();
+  const sameFamily = ids.filter((id) => id.toLowerCase().startsWith(family + '/'));
+  return (sameFamily.length ? sameFamily : ids).slice(0, 8);
 }
 
 // content kann String, Array von Parts oder bereits geparstes Objekt sein.
