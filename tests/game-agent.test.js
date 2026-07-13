@@ -104,6 +104,25 @@ test('erfolgreicher Stream macht klassischen Aufruf überflüssig', async () => 
   delete Quantum.ai.askStream;
 });
 
+test('review erkennt Syntaxfehler im Inline-Skript (abgeschnittene Spiellogik)', () => {
+  const broken = '<!doctype html><html><body><button id="start">Start</button>'
+    + '<script>function start(){ if(</script></body></html>';
+  const report = Quantum.gameAgent.review(broken);
+  assert.equal(report.approved, false);
+  assert.ok(report.issues.some((issue) => /JavaScript unvollständig oder fehlerhaft/.test(issue)), report.issues.join('; '));
+});
+
+test('KI-Spiel mit kaputtem JavaScript: lokaler Fallback statt toter Hülle oder Ablehnung', async () => {
+  const deadShell = '<!doctype html><html><body><h1>Neon Snake</h1><button id="start">Start</button>'
+    + '<script>const canvas=document.querySelector("canvas");function loop(){ requestAnimationFrame(</script></body></html>';
+  Quantum.ai.ask = async () => ({ text: deadShell, model: 'openai/gpt-oss-120b', provider: 'groq' });
+  const output = await registeredSkill.run('Snake im Neon-Style');
+  assert.ok(!output.includes('abgelehnt'), 'darf nicht abgelehnt werden:\n' + output);
+  assert.match(output, /nicht spielbar/);
+  assert.match(output, /lokaler Fallback aktiv/);
+  assert.match(output, /openai\/gpt-oss-120b/);
+});
+
 test('repair schließt abgeschnittene script/body/html-Tags und ergänzt den Doctype', () => {
   const fixed = Quantum.gameAgent.repair('<html><body><button id="start">Start</button><script>let x=1;');
   assert.match(fixed, /<\/script><\/body><\/html>$/);

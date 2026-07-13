@@ -144,7 +144,9 @@ window.Quantum = window.Quantum || {};
         system: CHAT_SYSTEM,
         prompt: buildChatPrompt(text),
         temperature: 0.6,
-        maxTokens: 1200,
+        /* Genug Luft für Denk-Modelle, die vor der Antwort Reasoning-Tokens
+           verbrauchen (z. B. gpt-oss); die Antwort selbst bleibt kurz. */
+        maxTokens: 2500,
       });
       const parsed = window.Quantum.modelResponse.parse(result.text);
       const answer = (parsed.kind === 'html' ? parsed.html : parsed.text) || String(result.text);

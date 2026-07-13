@@ -121,7 +121,7 @@ function callUpstream({ config, model, system, prompt, body, req }) {
       ],
       temperature: config.name === 'nvidia' ? 1.0 : (Number.isFinite(Number(body.temperature)) ? Number(body.temperature) : 0.35),
       ...(config.name === 'nvidia' ? { top_p: 0.95 } : {}),
-      max_tokens: Math.min(Math.max(Number(body.maxTokens) || 7000, 256), 12000),
+      max_tokens: Math.min(Math.max(Number(body.maxTokens) || 7000, 256), 16000),
     }),
   });
 }

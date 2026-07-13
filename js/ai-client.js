@@ -84,7 +84,10 @@ window.Quantum = window.Quantum || {};
           model = chunk.model || model;
           const choice = chunk.choices?.[0];
           if (choice?.finish_reason) finishReason = choice.finish_reason;
-          if (choice?.delta?.reasoning_content) reasoningChars += choice.delta.reasoning_content.length;
+          /* Denkblöcke: DeepSeek/Qwen senden reasoning_content, Groq
+             (gpt-oss) sendet reasoning — beide zählen als "nur gedacht". */
+          const reasoning = choice?.delta?.reasoning_content || choice?.delta?.reasoning;
+          if (reasoning) reasoningChars += reasoning.length;
           const delta = choice?.delta?.content || '';
           if (delta) {
             text += delta;

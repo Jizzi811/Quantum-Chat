@@ -59,7 +59,24 @@ window.Quantum = window.Quantum || {};
     if (!/<button\b/i.test(html) && !/(start|play|restart|neustart|nochmal)/i.test(html)) {
       issues.push('Es fehlt eine erkennbare Start- oder Neustart-Steuerung.');
     }
+    issues.push(...scriptIssues(html));
     return { approved: issues.length === 0, issues };
+  }
+
+  /* Prüft jedes Inline-Skript auf Syntaxfehler: fängt vor allem Spiele ab,
+     deren Logik am Token-Limit abgeschnitten wurde (hübsche Hülle, toter
+     Start-Knopf). new Function parst den Code, ohne ihn auszuführen. */
+  function scriptIssues(html) {
+    const issues = [];
+    for (const match of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)) {
+      if (!match[1].trim()) continue;
+      try {
+        new Function(match[1]);
+      } catch (error) {
+        issues.push('JavaScript unvollständig oder fehlerhaft: ' + error.message);
+      }
+    }
+    return issues;
   }
 
   function repair(html) {
@@ -124,7 +141,9 @@ window.Quantum = window.Quantum || {};
         let result;
         if (ai.askStream) {
           try {
-            result = await ai.askStream({ ...request, maxTokens: 11000 });
+            /* Großzügiges Budget: Denk-Modelle (z. B. gpt-oss) verbrauchen
+               erst Reasoning-Tokens, bevor der eigentliche Code kommt. */
+            result = await ai.askStream({ ...request, maxTokens: 14000 });
           } catch (_) {
             result = await ai.ask({ ...request, maxTokens: 2200 });
           }
@@ -157,6 +176,18 @@ window.Quantum = window.Quantum || {};
       let repaired = false;
       if (hadIssues || usedFallback) {
         html = repair(html);
+        report = review(html);
+        repaired = true;
+      }
+      /* KI-Spiel ist auch nach der Reparatur nicht lauffähig (z. B. am
+         Token-Limit abgeschnittene Spiellogik): lieber ein funktionierendes
+         lokales Spiel liefern als eine hübsche, aber tote Hülle. */
+      if (!report.approved && !usedFallback) {
+        aiStatus = '⚠️ ' + providerLabel() + '-Code (`' + model + '`) war nicht spielbar – lokaler Fallback aktiv'
+          + '\n· Review: ' + report.issues.join(' · ');
+        usedFallback = true;
+        html = repair(build(spec));
+        model = 'lokaler Fallback';
         report = review(html);
         repaired = true;
       }
