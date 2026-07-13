@@ -124,6 +124,34 @@ test('GEMINI_API_KEY hat Vorrang vor Groq: Anfrage geht an Googles OpenAI-Endpun
   }
 });
 
+test('Gemini-404 auf der nackten Modell-ID: Retry mit "models/"-Präfix', async () => {
+  process.env.GEMINI_API_KEY = 'test-gemini-key-789';
+  const calls = [];
+  global.fetch = async (url, options) => {
+    const body = JSON.parse(options.body);
+    calls.push(body.model);
+    if (body.model === 'gemini-2.5-flash') {
+      return {
+        ok: false, status: 404,
+        headers: { get: () => 'application/json' },
+        text: async () => JSON.stringify({ error: { message: 'model not found for API version v1beta' } }),
+      };
+    }
+    return okJson({ model: body.model, choices: [{ message: { content: 'ok' } }] });
+  };
+  const originalError = console.error;
+  console.error = () => {};
+  try {
+    const result = await handler(makeEvent());
+    assert.equal(result.statusCode, 200);
+    assert.deepEqual(calls, ['gemini-2.5-flash', 'models/gemini-2.5-flash']);
+    assert.equal(JSON.parse(result.body).model, 'models/gemini-2.5-flash');
+  } finally {
+    console.error = originalError;
+    delete process.env.GEMINI_API_KEY;
+  }
+});
+
 test('CUSTOM_AI_URL hat höchste Priorität (OpenAI-kompatibles Gateway, Key optional)', async () => {
   process.env.CUSTOM_AI_URL = 'https://gateway.example.com/v1';
   process.env.CUSTOM_AI_MODEL = 'router/auto';

@@ -73,6 +73,20 @@ function resolveProvider() {
   return null;
 }
 
+/* Alternative Modell-IDs für den 404/410-Retry. Gemini akzeptiert je nach
+   Endpunkt-Variante "gemini-…" oder "models/gemini-…" — erst die jeweils
+   andere Namensform probieren, danach das Default-Modell. */
+function fallbackModels(config, model) {
+  const alternates = [];
+  if (config.name === 'gemini') {
+    alternates.push(model.startsWith('models/') ? model.slice('models/'.length) : 'models/' + model);
+  }
+  if (model !== config.defaultModel && !alternates.includes(config.defaultModel)) {
+    alternates.push(config.defaultModel);
+  }
+  return alternates;
+}
+
 /* Liest eine Umgebungsvariable und bereinigt typische Paste-Fehler aus dem
    Netlify-UI: der Variablenname landet mit im Wert ("NVIDIA_MODEL=qwen/…"),
    umschließende Anführungszeichen oder Leerzeichen. */
@@ -108,6 +122,7 @@ function makeRateLimiter(limit = 10, windowMs = 60000) {
 module.exports = {
   PROVIDERS,
   resolveProvider,
+  fallbackModels,
   envValue,
   safeEqual,
   makeRateLimiter,
