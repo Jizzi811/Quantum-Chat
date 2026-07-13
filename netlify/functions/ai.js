@@ -10,15 +10,15 @@ exports.handler = async (event) => {
     return response(405, { error: 'Method not allowed' });
   }
 
-  const nvidiaKey = process.env.NVIDIA_API_KEY;
-  const openRouterKey = process.env.OPENROUTER_API_KEY;
-  const accessToken = process.env.QUANTUM_ACCESS_TOKEN;
+  const nvidiaKey = envValue('NVIDIA_API_KEY');
+  const openRouterKey = envValue('OPENROUTER_API_KEY');
+  const accessToken = envValue('QUANTUM_ACCESS_TOKEN');
   if ((!nvidiaKey && !openRouterKey) || !accessToken) {
     return response(503, { error: 'Quantum AI is not fully configured in Netlify.' });
   }
 
   const origin = event.headers.origin || '';
-  const allowedOrigin = process.env.QUANTUM_ALLOWED_ORIGIN || '';
+  const allowedOrigin = envValue('QUANTUM_ALLOWED_ORIGIN');
   if (allowedOrigin && origin !== allowedOrigin) return response(403, { error: 'Origin not allowed.' });
   const provided = String(event.headers.authorization || '').replace(/^Bearer\s+/i, '');
   if (!safeEqual(provided, accessToken)) return response(401, { error: 'Quantum access code is invalid.' });
@@ -43,8 +43,8 @@ exports.handler = async (event) => {
     const provider = nvidiaKey ? 'nvidia' : 'openrouter';
     const apiKey = nvidiaKey || openRouterKey;
     const model = provider === 'nvidia'
-      ? (process.env.NVIDIA_MODEL || NVIDIA_DEFAULT_MODEL)
-      : (process.env.OPENROUTER_MODEL || 'openrouter/free');
+      ? (envValue('NVIDIA_MODEL') || NVIDIA_DEFAULT_MODEL)
+      : (envValue('OPENROUTER_MODEL') || 'openrouter/free');
     const upstream = await fetch(provider === 'nvidia' ? NVIDIA_URL : OPENROUTER_URL, {
       method: 'POST',
       headers: {
@@ -109,7 +109,7 @@ exports.handler = async (event) => {
   } catch (error) {
     logUpstreamIssue({
       status: 'kein HTTP-Status (Netzwerkfehler)',
-      model: process.env.NVIDIA_MODEL || NVIDIA_DEFAULT_MODEL,
+      model: envValue('NVIDIA_MODEL') || NVIDIA_DEFAULT_MODEL,
       provider: nvidiaKey ? 'nvidia' : 'openrouter',
       contentType: 'unbekannt',
       raw: '',
@@ -118,6 +118,18 @@ exports.handler = async (event) => {
     return response(502, { error: error.message || 'The configured AI provider is unavailable.' });
   }
 };
+
+/* Liest eine Umgebungsvariable und bereinigt typische Paste-Fehler aus dem
+   Netlify-UI: der Variablenname landet mit im Wert ("NVIDIA_MODEL=qwen/…"),
+   umschließende Anführungszeichen oder Leerzeichen. */
+function envValue(name) {
+  let value = String(process.env[name] || '').trim();
+  if (value.toUpperCase().startsWith(name.toUpperCase() + '=')) {
+    value = value.slice(name.length + 1).trim();
+  }
+  value = value.replace(/^["']+|["']+$/g, '').trim();
+  return value;
+}
 
 // content kann String, Array von Parts oder bereits geparstes Objekt sein.
 // Objekte werden serialisiert statt sie später erneut durch JSON.parse zu jagen.

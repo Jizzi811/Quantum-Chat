@@ -106,6 +106,29 @@ test('leerer content liefert klaren Fehler statt Fallback-Rätselraten', () =>
     assert.match(JSON.parse(result.body).error, /keinen Inhalt/i);
   }));
 
+test('Env-Var-Werte mit Variablenname-Präfix und Quotes werden bereinigt', async () => {
+  process.env.NVIDIA_MODEL = 'NVIDIA_MODEL=qwen/qwen3-coder-480b-a35b-instruct';
+  process.env.NVIDIA_API_KEY = ' "test-nvidia-key-123" ';
+  let sentBody = null;
+  let sentAuth = null;
+  global.fetch = async (url, options) => {
+    sentBody = JSON.parse(options.body);
+    sentAuth = options.headers.Authorization;
+    return {
+      ok: true, status: 200,
+      headers: { get: () => 'application/json' },
+      text: async () => JSON.stringify({ choices: [{ message: { content: 'ok' } }] }),
+    };
+  };
+  const result = await handler(makeEvent());
+  assert.equal(result.statusCode, 200);
+  assert.equal(sentBody.model, 'qwen/qwen3-coder-480b-a35b-instruct');
+  assert.equal(sentAuth, 'Bearer test-nvidia-key-123');
+  assert.equal(JSON.parse(result.body).model, 'qwen/qwen3-coder-480b-a35b-instruct');
+  delete process.env.NVIDIA_MODEL;
+  process.env.NVIDIA_API_KEY = 'test-nvidia-key-123';
+});
+
 test('Netzwerkfehler wird geloggt und als 502 gemeldet', () =>
   captureErrors(async (logged) => {
     global.fetch = async () => { throw new Error('socket hang up'); };
