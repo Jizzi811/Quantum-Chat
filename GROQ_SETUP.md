@@ -27,9 +27,10 @@ Das Gateway nimmt den ersten konfigurierten Provider in dieser Reihenfolge:
    z. B. `https://mein-server.example.com/v1`. Das Gateway muss öffentlich
    erreichbar sein — `localhost` auf dem eigenen PC funktioniert nicht,
    weil die Netlify Functions in der Cloud laufen.
-2. `GROQ_API_KEY` (+ optional `GROQ_MODEL`)
-3. `NVIDIA_API_KEY` (+ optional `NVIDIA_MODEL`)
-4. `OPENROUTER_API_KEY` (+ optional `OPENROUTER_MODEL`)
+2. `GEMINI_API_KEY` (+ optional `GEMINI_MODEL`) — siehe `GEMINI_SETUP.md`
+3. `GROQ_API_KEY` (+ optional `GROQ_MODEL`)
+4. `NVIDIA_API_KEY` (+ optional `NVIDIA_MODEL`)
+5. `OPENROUTER_API_KEY` (+ optional `OPENROUTER_MODEL`)
 
 Ein noch vorhandener `NVIDIA_API_KEY` stört also nicht: sobald
 `GROQ_API_KEY` gesetzt ist, wird Groq verwendet.

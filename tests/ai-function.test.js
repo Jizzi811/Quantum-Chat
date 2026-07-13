@@ -7,6 +7,8 @@ delete process.env.QUANTUM_ALLOWED_ORIGIN;
 delete process.env.NVIDIA_MODEL;
 delete process.env.GROQ_API_KEY;
 delete process.env.GROQ_MODEL;
+delete process.env.GEMINI_API_KEY;
+delete process.env.GEMINI_MODEL;
 delete process.env.CUSTOM_AI_URL;
 delete process.env.CUSTOM_AI_MODEL;
 

@@ -3,10 +3,19 @@
 /* Unterstützte Provider in Prioritätsreihenfolge: der erste, dessen
    API-Key gesetzt ist, gewinnt. Alle sprechen die OpenAI-kompatible
    Chat-Completions-API — nur Basis-URL, Key und Modell unterscheiden sich.
+   - gemini:     kostenloser Free-Tier (aistudio.google.com/apikey)
    - groq:       kostenloser Free-Tier (console.groq.com/keys), sehr schnell
    - nvidia:     NVIDIA Build (integrate.api.nvidia.com)
    - openrouter: Sammel-Gateway mit freien Modellen */
 const PROVIDERS = [
+  {
+    name: 'gemini',
+    url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+    modelsUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/models',
+    defaultModel: 'gemini-2.5-flash',
+    keyEnv: 'GEMINI_API_KEY',
+    modelEnv: 'GEMINI_MODEL',
+  },
   {
     name: 'groq',
     url: 'https://api.groq.com/openai/v1/chat/completions',
