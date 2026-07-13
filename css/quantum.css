@@ -564,6 +564,16 @@ html, body {
   font-family: var(--font-mono);
 }
 
+.q-footer__catalog {
+  display: inline-block;
+  margin: 0 .75rem;
+  color: var(--neon-cyan);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(0, 245, 255, .35);
+}
+
+.q-footer__catalog:hover { color: var(--neon-magenta); border-color: var(--neon-magenta); }
+
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: rgba(157, 77, 255, 0.06); }
 ::-webkit-scrollbar-thumb { background: linear-gradient(var(--neon-cyan), var(--neon-purple)); border-radius: 99px; }

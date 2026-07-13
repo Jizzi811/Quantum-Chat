@@ -34,6 +34,7 @@
   <link rel="stylesheet" href="css/chat.css" />
   <link rel="stylesheet" href="css/landing.css" />
   <link rel="stylesheet" href="css/tts-studio.css" />
+  <link rel="stylesheet" href="css/songsee.css" />
   <link rel="stylesheet" href="css/sell.css" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚛️</text></svg>" />
 </head>
@@ -221,9 +222,14 @@
     <!-- ══════════ AUTOMATIONS PANEL ══════════ -->
     <aside class="q-panel q-panel--autos" data-testid="automations-panel">
       <div class="q-panel__head">
-        <h2 class="q-panel__title q-panel__title--magenta">⟳ AUTOMATIONEN</h2>
+        <h2 class="q-panel__title q-panel__title--magenta">◫ ÜBERSICHT</h2>
         <span class="q-panel__count" id="autos-count">0</span>
       </div>
+      <div class="overview-tabs" role="tablist" aria-label="Übersicht">
+        <button type="button" class="overview-tab is-active" role="tab" aria-selected="true" data-overview-tab="automations">⟳ AUTOMATIONEN</button>
+        <button type="button" class="overview-tab" role="tab" aria-selected="false" data-overview-tab="songsee">🌊 SONGSEE</button>
+      </div>
+      <div class="overview-panel" data-overview-panel="automations">
       <p class="q-panel__hint">Quantum arbeitet auch, wenn du nicht da bist: zeitgesteuert oder wenn ein Ereignis eintritt.</p>
 
       <form class="auto-form" id="auto-form" data-testid="automation-form">
@@ -246,11 +252,40 @@
         <h3 class="auto-log__title">▸ AKTIVITÄTS-LOG</h3>
         <ul class="auto-log__list" id="auto-log" data-testid="automation-log"></ul>
       </div>
+      </div>
+
+      <section class="overview-panel songsee" data-overview-panel="songsee" hidden aria-label="Songsee Audio-Visualisierung">
+        <p class="q-panel__hint">Verwandle Musik oder Sprache direkt im Browser in ein farbiges Spektrogramm. Deine Audiodatei wird nicht hochgeladen.</p>
+        <label class="songsee__drop">
+          <span>🎵 Audiodatei auswählen<small>WAV, MP3 oder ein Browser-kompatibles Audioformat</small></span>
+          <input type="file" id="songsee-file" accept="audio/*,.wav,.mp3" />
+        </label>
+        <div class="songsee__controls">
+          <label class="songsee__field songsee__field--wide">Farbstil
+            <select id="songsee-style" class="songsee__input">
+              <option value="classic">Quantum Classic</option>
+              <option value="magma">Magma</option>
+              <option value="inferno">Inferno</option>
+              <option value="viridis">Viridis</option>
+              <option value="gray">Grau</option>
+            </select>
+          </label>
+          <label class="songsee__field">Start (Sek.)<input id="songsee-start" class="songsee__input" type="number" min="0" step="0.1" value="0" /></label>
+          <label class="songsee__field">Dauer (Sek.)<input id="songsee-duration" class="songsee__input" type="number" min="0.1" step="0.1" placeholder="komplett" /></label>
+        </div>
+        <div class="songsee__actions">
+          <button type="button" class="songsee__button" id="songsee-render">SPEKTROGRAMM ERZEUGEN</button>
+          <button type="button" class="songsee__button songsee__button--secondary" id="songsee-download" disabled title="Als PNG speichern">⇩ PNG</button>
+        </div>
+        <div class="songsee__canvas-wrap"><canvas class="songsee__canvas" id="songsee-canvas" width="720" height="405" aria-label="Generiertes Spektrogramm"></canvas></div>
+        <p class="songsee__status" id="songsee-status" role="status">Bereit für deine Audiodatei.</p>
+      </section>
     </aside>
   </main>
 
   <footer class="q-footer">
     <span>QUANTUM v1.0 — dein AI Worker mit Skills, Studios &amp; Automationen.</span>
+    <a class="q-footer__catalog" href="output/pdf/Quantum_Produktkatalog_Skills_und_Expertenprompts.pdf" target="_blank" rel="noopener">Produktkatalog &amp; Expertenprompts ↗</a>
     <span class="q-footer__powered">powered by <b>NADJ.AI</b></span>
   </footer>
 
@@ -268,6 +303,7 @@
   <script src="js/tts-studio.js"></script>
   <script src="js/image-studio.js"></script>
   <script src="js/video-studio.js"></script>
+  <script src="js/songsee.js"></script>
   <script src="js/uploads.js"></script>
   <script src="js/ai-agents.js"></script>
   <script src="js/app.js"></script>
