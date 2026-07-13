@@ -99,10 +99,15 @@ window.Quantum = window.Quantum || {};
     { re: /^[\d\s+\-*/().^%]+$/, fn: (text) => window.Quantum.skills.run('rechner', text) },
   ];
 
-  /* ── NVIDIA/Qwen-Chat ─────────────────────────────────────────
-     Ist ein KI-Zugangscode gesetzt, beantwortet das NVIDIA-Modell
-     alle freien Fragen (Befehle und Skill-Sessions bleiben lokal).
-     Ohne Zugang bleibt Quantum im lokalen Demo-Modus. */
+  /* ── KI-Chat (Groq/NVIDIA/OpenRouter via Gateway) ─────────────
+     Ist ein KI-Zugangscode gesetzt, beantwortet das konfigurierte
+     KI-Modell alle freien Fragen (Befehle und Skill-Sessions bleiben
+     lokal). Ohne Zugang bleibt Quantum im lokalen Demo-Modus. */
+
+  const PROVIDER_LABELS = { groq: 'Groq', nvidia: 'NVIDIA/Qwen', openrouter: 'OpenRouter', custom: 'Custom-Gateway' };
+  function providerLabel(id) {
+    return PROVIDER_LABELS[String(id || '').toLowerCase()] || 'KI-Modell';
+  }
 
   const CHAT_SYSTEM = [
     'Du bist QUANTUM, ein hilfsbereiter AI Worker mit Neon-Cyberpunk-Persönlichkeit:',
@@ -145,7 +150,7 @@ window.Quantum = window.Quantum || {};
       const answer = (parsed.kind === 'html' ? parsed.html : parsed.text) || String(result.text);
       return answer.trim() || pick(FALLBACKS);
     } catch (error) {
-      return '⚠️ NVIDIA/Qwen nicht erreichbar: ' + (error.message || 'unbekannter Fehler') +
+      return '⚠️ ' + providerLabel(error.provider) + ' nicht erreichbar: ' + (error.message || 'unbekannter Fehler') +
         '\nLokale Antwort: ' + pick(FALLBACKS);
     }
   }
@@ -195,14 +200,14 @@ window.Quantum = window.Quantum || {};
       /* Reine Rechenausdrücke immer sofort lokal lösen */
       if (/^[\d\s+\-*/().^%]+$/.test(text)) return window.Quantum.skills.run('rechner', text);
 
-      /* Mit KI-Zugang gehen freie Fragen an das NVIDIA/Qwen-Modell */
+      /* Mit KI-Zugang gehen freie Fragen an das konfigurierte KI-Modell */
       if (aiAvailable()) return aiRespond(text);
 
       for (const intent of INTENTS) {
         if (intent.re.test(text)) return intent.fn(text);
       }
       return pick(FALLBACKS) +
-        '\n\n💡 Tipp: Mit einem KI-Zugangscode (🔑 oben rechts) beantwortet das NVIDIA/Qwen-Modell solche Fragen live.';
+        '\n\n💡 Tipp: Mit einem KI-Zugangscode (🔑 oben rechts) beantwortet das KI-Modell (z. B. Groq/Llama) solche Fragen live.';
     },
   };
 })();

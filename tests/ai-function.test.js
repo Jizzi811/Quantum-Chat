@@ -5,6 +5,10 @@ process.env.NVIDIA_API_KEY = 'test-nvidia-key-123';
 process.env.QUANTUM_ACCESS_TOKEN = 'secret-token';
 delete process.env.QUANTUM_ALLOWED_ORIGIN;
 delete process.env.NVIDIA_MODEL;
+delete process.env.GROQ_API_KEY;
+delete process.env.GROQ_MODEL;
+delete process.env.CUSTOM_AI_URL;
+delete process.env.CUSTOM_AI_MODEL;
 
 const { handler } = require('../netlify/functions/ai.js');
 

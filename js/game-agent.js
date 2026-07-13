@@ -12,6 +12,13 @@ window.Quantum = window.Quantum || {};
     /document\.cookie/i, /location\s*[.=]/i, /<iframe/i, /<object/i, /<embed/i,
   ];
 
+  /* Anzeigename des Providers, den das Gateway in result.provider bzw.
+     error.provider mitliefert. Unbekannt/leer → neutrales "KI-Modell". */
+  const PROVIDER_LABELS = { groq: 'Groq', nvidia: 'NVIDIA/Qwen', openrouter: 'OpenRouter', custom: 'Custom-Gateway' };
+  function providerLabel(id) {
+    return PROVIDER_LABELS[String(id || '').toLowerCase()] || 'KI-Modell';
+  }
+
   function esc(value) {
     return String(value).replace(/[&<>"']/g, (char) => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -121,17 +128,17 @@ window.Quantum = window.Quantum || {};
         if (extracted) {
           html = extracted;
           model = result.model || 'unbekanntes Modell';
-          aiStatus = '✓ NVIDIA/Qwen erfolgreich (`' + model + '`)';
+          aiStatus = '✓ ' + providerLabel(result.provider) + ' erfolgreich (`' + model + '`)';
         } else {
           usedFallback = true;
           const snippet = String(result.text || '').replace(/\s+/g, ' ').trim().slice(0, 180);
-          aiStatus = '⚠️ NVIDIA/Qwen lieferte kein verwertbares HTML (`' + (result.model || 'unbekanntes Modell') + '`'
+          aiStatus = '⚠️ ' + providerLabel(result.provider) + ' lieferte kein verwertbares HTML (`' + (result.model || 'unbekanntes Modell') + '`'
             + (result.finishReason ? ', finish: ' + result.finishReason : '') + ') – lokaler Fallback aktiv'
             + (snippet ? '\n· Antwortanfang: „' + snippet + '…“' : '');
         }
       } catch (error) {
         usedFallback = true;
-        aiStatus = '⚠️ NVIDIA/Qwen fehlgeschlagen (`' + (error.model || 'Modell unbekannt') + '`): '
+        aiStatus = '⚠️ ' + providerLabel(error.provider) + ' fehlgeschlagen (`' + (error.model || 'Modell unbekannt') + '`): '
           + (error.message || 'nicht erreichbar') + ' – lokaler Fallback aktiv';
       }
       if (usedFallback) {

@@ -5,9 +5,7 @@
    Generierungen (z. B. komplette Browser-Games) werden damit möglich.
    Auth, Rate-Limit und Modell-Fallback identisch zu ai.js. */
 import {
-  OPENROUTER_URL,
-  NVIDIA_URL,
-  NVIDIA_DEFAULT_MODEL,
+  resolveProvider,
   envValue,
   safeEqual,
   makeRateLimiter,
@@ -22,10 +20,9 @@ const withinRateLimit = makeRateLimiter();
 export default async function handler(req) {
   if (req.method !== 'POST') return jsonResponse(405, { error: 'Method not allowed' });
 
-  const nvidiaKey = envValue('NVIDIA_API_KEY');
-  const openRouterKey = envValue('OPENROUTER_API_KEY');
+  const config = resolveProvider();
   const accessToken = envValue('QUANTUM_ACCESS_TOKEN');
-  if ((!nvidiaKey && !openRouterKey) || !accessToken) {
+  if (!config || !accessToken) {
     return jsonResponse(503, { error: 'Quantum AI is not fully configured in Netlify.' });
   }
 
@@ -50,23 +47,20 @@ export default async function handler(req) {
     return jsonResponse(400, { error: 'Prompt is empty or too long.' });
   }
 
-  const provider = nvidiaKey ? 'nvidia' : 'openrouter';
-  const apiKey = nvidiaKey || openRouterKey;
-  let model = provider === 'nvidia'
-    ? (envValue('NVIDIA_MODEL') || NVIDIA_DEFAULT_MODEL)
-    : (envValue('OPENROUTER_MODEL') || 'openrouter/free');
+  const provider = config.name;
+  let model = config.model;
 
   try {
-    let upstream = await callUpstream({ provider, apiKey, model, system, prompt, body, req });
+    let upstream = await callUpstream({ config, model, system, prompt, body, req });
 
     /* Konfiguriertes Modell existiert nicht mehr (404/410): Retry mit Default. */
     if (!upstream.ok && (upstream.status === 404 || upstream.status === 410)
-        && provider === 'nvidia' && model !== NVIDIA_DEFAULT_MODEL) {
+        && model !== config.defaultModel) {
       console.error('[quantum-ai-stream] Modell nicht verfügbar, Retry mit Default', {
-        httpStatus: upstream.status, provider, model, fallback: NVIDIA_DEFAULT_MODEL,
+        httpStatus: upstream.status, provider, model, fallback: config.defaultModel,
       });
-      model = NVIDIA_DEFAULT_MODEL;
-      upstream = await callUpstream({ provider, apiKey, model, system, prompt, body, req });
+      model = config.defaultModel;
+      upstream = await callUpstream({ config, model, system, prompt, body, req });
     }
 
     if (!upstream.ok) {
@@ -104,14 +98,16 @@ export default async function handler(req) {
   }
 }
 
-function callUpstream({ provider, apiKey, model, system, prompt, body, req }) {
-  return fetch(provider === 'nvidia' ? NVIDIA_URL : OPENROUTER_URL, {
+/* NVIDIA/Qwen braucht hohe Temperatur samt top_p, alle anderen Provider
+   bekommen die gewünschte Temperatur. */
+function callUpstream({ config, model, system, prompt, body, req }) {
+  return fetch(config.url, {
     method: 'POST',
     signal: AbortSignal.timeout(STREAM_TIMEOUT_MS),
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      ...(config.apiKey ? { Authorization: `Bearer ${config.apiKey}` } : {}),
       'Content-Type': 'application/json',
-      ...(provider === 'openrouter' ? {
+      ...(config.name === 'openrouter' ? {
         'HTTP-Referer': req.headers.get('origin') || req.headers.get('referer') || 'https://quantum.local',
         'X-Title': 'Quantum Neon Chat',
       } : {}),
@@ -123,8 +119,8 @@ function callUpstream({ provider, apiKey, model, system, prompt, body, req }) {
         { role: 'system', content: system },
         { role: 'user', content: prompt },
       ],
-      temperature: provider === 'nvidia' ? 1.0 : (Number.isFinite(Number(body.temperature)) ? Number(body.temperature) : 0.35),
-      ...(provider === 'nvidia' ? { top_p: 0.95 } : {}),
+      temperature: config.name === 'nvidia' ? 1.0 : (Number.isFinite(Number(body.temperature)) ? Number(body.temperature) : 0.35),
+      ...(config.name === 'nvidia' ? { top_p: 0.95 } : {}),
       max_tokens: Math.min(Math.max(Number(body.maxTokens) || 7000, 256), 12000),
     }),
   });

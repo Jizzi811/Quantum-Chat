@@ -1,9 +1,68 @@
 /* QUANTUM — gemeinsame Helfer für die AI-Functions (ai.js, ai-stream.mjs). */
 
-const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const NVIDIA_URL = 'https://integrate.api.nvidia.com/v1/chat/completions';
-const NVIDIA_MODELS_URL = 'https://integrate.api.nvidia.com/v1/models';
-const NVIDIA_DEFAULT_MODEL = 'qwen/qwen3.5-122b-a10b';
+/* Unterstützte Provider in Prioritätsreihenfolge: der erste, dessen
+   API-Key gesetzt ist, gewinnt. Alle sprechen die OpenAI-kompatible
+   Chat-Completions-API — nur Basis-URL, Key und Modell unterscheiden sich.
+   - groq:       kostenloser Free-Tier (console.groq.com/keys), sehr schnell
+   - nvidia:     NVIDIA Build (integrate.api.nvidia.com)
+   - openrouter: Sammel-Gateway mit freien Modellen */
+const PROVIDERS = [
+  {
+    name: 'groq',
+    url: 'https://api.groq.com/openai/v1/chat/completions',
+    modelsUrl: 'https://api.groq.com/openai/v1/models',
+    defaultModel: 'llama-3.3-70b-versatile',
+    keyEnv: 'GROQ_API_KEY',
+    modelEnv: 'GROQ_MODEL',
+  },
+  {
+    name: 'nvidia',
+    url: 'https://integrate.api.nvidia.com/v1/chat/completions',
+    modelsUrl: 'https://integrate.api.nvidia.com/v1/models',
+    defaultModel: 'qwen/qwen3.5-122b-a10b',
+    keyEnv: 'NVIDIA_API_KEY',
+    modelEnv: 'NVIDIA_MODEL',
+  },
+  {
+    name: 'openrouter',
+    url: 'https://openrouter.ai/api/v1/chat/completions',
+    modelsUrl: null,
+    defaultModel: 'openrouter/free',
+    keyEnv: 'OPENROUTER_API_KEY',
+    modelEnv: 'OPENROUTER_MODEL',
+  },
+];
+
+/* Ermittelt den aktiven Provider aus den Umgebungsvariablen.
+   CUSTOM_AI_URL (+ CUSTOM_AI_MODEL, optional CUSTOM_AI_KEY) hat Vorrang und
+   erlaubt jedes selbst gehostete OpenAI-kompatible Gateway (z. B. OmniRoute
+   oder LiteLLM): als Basis-URL bis einschließlich /v1 angeben. */
+function resolveProvider() {
+  const customUrl = envValue('CUSTOM_AI_URL');
+  const customModel = envValue('CUSTOM_AI_MODEL');
+  if (customUrl && customModel) {
+    const base = customUrl.replace(/\/+$/, '').replace(/\/chat\/completions$/, '');
+    return {
+      name: 'custom',
+      url: base + '/chat/completions',
+      modelsUrl: base + '/models',
+      defaultModel: customModel,
+      apiKey: envValue('CUSTOM_AI_KEY'),
+      model: customModel,
+    };
+  }
+  for (const provider of PROVIDERS) {
+    const apiKey = envValue(provider.keyEnv);
+    if (apiKey) {
+      return {
+        ...provider,
+        apiKey,
+        model: envValue(provider.modelEnv) || provider.defaultModel,
+      };
+    }
+  }
+  return null;
+}
 
 /* Liest eine Umgebungsvariable und bereinigt typische Paste-Fehler aus dem
    Netlify-UI: der Variablenname landet mit im Wert ("NVIDIA_MODEL=qwen/…"),
@@ -38,10 +97,8 @@ function makeRateLimiter(limit = 10, windowMs = 60000) {
 }
 
 module.exports = {
-  OPENROUTER_URL,
-  NVIDIA_URL,
-  NVIDIA_MODELS_URL,
-  NVIDIA_DEFAULT_MODEL,
+  PROVIDERS,
+  resolveProvider,
   envValue,
   safeEqual,
   makeRateLimiter,
