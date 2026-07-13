@@ -39,6 +39,17 @@
     return text.replace(/^```[a-zA-Z0-9_-]*[^\S\n]*$/gm, '').trim();
   }
 
+  /* Reasoning-Modelle (DeepSeek-R1, Qwen3.x) schreiben <think>…</think>-
+     Denkblöcke in die Antwort. Geschlossene Blöcke werden entfernt; ein
+     nicht geschlossener Block bedeutet: das Modell hat nur gedacht und
+     nie geantwortet — dann bleibt nichts Verwertbares übrig. */
+  function stripThinking(text) {
+    let out = text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+    const open = out.search(/<think>/i);
+    if (open !== -1) out = out.slice(0, open).trim();
+    return out;
+  }
+
   function findHtmlStart(text) {
     const doctype = text.search(/<!doctype\s+html/i);
     const htmlTag = text.search(/<html[\s>]/i);
@@ -104,7 +115,7 @@
     }
     const raw = contentToText(content);
     if (raw === null) return { kind: 'json', data: content, text: null };
-    const text = stripFences(String(raw).trim());
+    const text = stripFences(stripThinking(String(raw).trim()));
     if (!text) return { kind: 'empty', text: '' };
 
     if (text[0] === '<') {
@@ -133,5 +144,5 @@
     return null;
   }
 
-  return { parse, extractHtml, extractFirstJson, stripFences, contentToText };
+  return { parse, extractHtml, extractFirstJson, stripFences, stripThinking, contentToText };
 });

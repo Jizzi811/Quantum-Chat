@@ -80,6 +80,25 @@ test('leerer/null-Content ergibt kind "empty"', () => {
   assert.equal(modelResponse.parse(undefined).kind, 'empty');
 });
 
+// Reasoning-Modelle: <think>-Blöcke dürfen das Parsen nicht stören
+test('entfernt geschlossene <think>-Blöcke vor HTML', () => {
+  const result = modelResponse.parse('<think>Ich plane ein Snake-Spiel …</think>\n<!doctype html><html><body>x</body></html>');
+  assert.equal(result.kind, 'html');
+  assert.ok(result.html.startsWith('<!doctype html>'));
+  assert.ok(!result.html.includes('<think>'));
+});
+
+test('entfernt <think>-Blöcke vor JSON', () => {
+  const result = modelResponse.parse('<think>hmm</think>{"a":1}');
+  assert.equal(result.kind, 'json');
+  assert.deepEqual(result.data, { a: 1 });
+});
+
+test('nicht geschlossenes <think> (nur Denken, keine Antwort) ergibt empty', () => {
+  const result = modelResponse.parse('<think>Ich überlege noch, wie das Spiel aussehen soll und');
+  assert.equal(result.kind, 'empty');
+});
+
 // extractHtml — für das Game Studio
 test('extractHtml liefert HTML aus direktem HTML', () => {
   const html = '<!doctype html><html><body>x</body></html>';

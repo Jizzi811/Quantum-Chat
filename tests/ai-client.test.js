@@ -62,3 +62,11 @@ test('askStream wirft bei leerem Stream', async () => {
   global.fetch = async () => new Response('data: [DONE]\n\n', { status: 200 });
   await assert.rejects(Quantum.ai.askStream({ prompt: 'test' }), /keinen Inhalt/);
 });
+
+test('askStream erklärt, wenn das Modell nur Reasoning ohne Antwort liefert', async () => {
+  const body = 'data: {"choices":[{"delta":{"reasoning_content":"Ich denke nach …"},"finish_reason":null}]}\n\n'
+    + 'data: {"choices":[{"delta":{},"finish_reason":"length"}]}\n\n'
+    + 'data: [DONE]\n\n';
+  global.fetch = async () => new Response(body, { status: 200 });
+  await assert.rejects(Quantum.ai.askStream({ prompt: 'test' }), /nur gedacht/);
+});

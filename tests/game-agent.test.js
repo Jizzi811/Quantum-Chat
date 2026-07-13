@@ -58,6 +58,29 @@ test('Unbrauchbare Antwort (kein HTML): Fallback + automatischer Repair Agent', 
   assert.ok(!output.includes('Repair Agent: nicht nötig'));
 });
 
+test('unbrauchbare Antwort zeigt Antwortanfang und finish_reason zur Diagnose', async () => {
+  Quantum.ai.askStream = async () => ({
+    text: 'Hier sind ein paar Ideen für dein Spiel: 1. Snake …',
+    model: 'qwen/qwen3.5-122b-a10b',
+    finishReason: 'length',
+  });
+  Quantum.ai.ask = async () => ({ text: 'Auch nur Text.', model: 'qwen/qwen3.5-122b-a10b' });
+  const output = await registeredSkill.run('Snake');
+  assert.match(output, /Antwortanfang/);
+  assert.match(output, /Hier sind ein paar Ideen/);
+  assert.match(output, /length/);
+});
+
+test('Antwort mit <think>-Block und HTML dahinter wird akzeptiert', async () => {
+  Quantum.ai.askStream = async () => ({
+    text: '<think>Snake braucht ein Grid …</think>' + VALID_GAME_HTML,
+    model: 'qwen/qwen3.5-122b-a10b',
+  });
+  const output = await registeredSkill.run('Snake');
+  assert.match(output, /NVIDIA\/Qwen erfolgreich/);
+  assert.ok(!output.includes('lokaler Fallback aktiv'));
+});
+
 test('Streaming wird bevorzugt; bei Stream-Fehler klassischer Aufruf', async () => {
   let streamCalls = 0;
   let askCalls = 0;

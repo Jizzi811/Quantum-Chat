@@ -67,6 +67,7 @@ window.Quantum = window.Quantum || {};
     let buffer = '';
     let text = '';
     let finishReason = null;
+    let reasoningChars = 0;
     for (;;) {
       const { done, value } = await reader.read();
       if (done) break;
@@ -83,6 +84,7 @@ window.Quantum = window.Quantum || {};
           model = chunk.model || model;
           const choice = chunk.choices?.[0];
           if (choice?.finish_reason) finishReason = choice.finish_reason;
+          if (choice?.delta?.reasoning_content) reasoningChars += choice.delta.reasoning_content.length;
           const delta = choice?.delta?.content || '';
           if (delta) {
             text += delta;
@@ -91,7 +93,13 @@ window.Quantum = window.Quantum || {};
         } catch (_) { /* unvollständige/fremde Zeile überspringen */ }
       }
     }
-    if (!text.trim()) throw new Error('Der Stream lieferte keinen Inhalt.');
+    if (!text.trim()) {
+      if (reasoningChars > 0) {
+        throw new Error('Das Modell hat nur gedacht, aber keine Antwort geliefert'
+          + (finishReason === 'length' ? ' (Token-Limit im Denkblock erreicht)' : '') + '.');
+      }
+      throw new Error('Der Stream lieferte keinen Inhalt.');
+    }
     return { text, model, provider, finishReason };
   }
 
