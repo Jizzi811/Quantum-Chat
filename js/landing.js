@@ -5,7 +5,7 @@
    Cursor), Bloom, das nach Bewegung weich ausblendet, Cursor-Licht.
    requestAnimationFrame + translate3d für 60 FPS; auf Mobilgeräten
    und bei prefers-reduced-motion reduziert.
-   Außerdem: Access-Token-Eingabe für das NVIDIA/Qwen-Gateway.
+   Außerdem: Access-Token-Eingabe für das KI-Gateway (Groq/NVIDIA/OpenRouter).
    ═══════════════════════════════════════════════════════════════ */
 window.Quantum = window.Quantum || {};
 
@@ -143,10 +143,10 @@ window.Quantum = window.Quantum || {};
   function refreshHint() {
     const active = !!(window.Quantum.ai && window.Quantum.ai.hasAccess && window.Quantum.ai.hasAccess());
     if (active) {
-      hint.textContent = '🟢 KI-Zugang aktiv — Chatfragen beantwortet das NVIDIA/Qwen-Modell.';
+      hint.textContent = '🟢 KI-Zugang aktiv — Chatfragen beantwortet das konfigurierte KI-Modell (z. B. Groq/Llama).';
       hint.classList.add('landing__hint--ok');
     } else {
-      hint.textContent = 'Ohne Code startet Quantum im lokalen Demo-Modus (ohne NVIDIA-Antworten).';
+      hint.textContent = 'Ohne Code startet Quantum im lokalen Demo-Modus (ohne Live-KI-Antworten).';
       hint.classList.remove('landing__hint--ok');
     }
   }
@@ -173,7 +173,7 @@ window.Quantum = window.Quantum || {};
     const token = tokenInput.value.trim();
     if (token && window.Quantum.ai && window.Quantum.ai.setAccess) {
       window.Quantum.ai.setAccess(token);
-      if (window.Quantum.ui) window.Quantum.ui.system('🔑 KI-Zugang gespeichert — Fragen im Chat gehen jetzt an NVIDIA/Qwen.');
+      if (window.Quantum.ui) window.Quantum.ui.system('🔑 KI-Zugang gespeichert — Fragen im Chat gehen jetzt an das konfigurierte KI-Modell.');
     }
     tokenInput.value = '';
     close();

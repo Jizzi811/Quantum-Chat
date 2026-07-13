@@ -61,7 +61,7 @@ window.Quantum = window.Quantum || {};
       throw error;
     }
     let model = res.headers.get('x-quantum-model') || '';
-    const provider = res.headers.get('x-quantum-provider') || 'nvidia';
+    const provider = res.headers.get('x-quantum-provider') || '';
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';

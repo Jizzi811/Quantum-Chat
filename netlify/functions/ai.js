@@ -1,9 +1,6 @@
 const { contentToText } = require('../../js/model-response.js');
 const {
-  OPENROUTER_URL,
-  NVIDIA_URL,
-  NVIDIA_MODELS_URL,
-  NVIDIA_DEFAULT_MODEL,
+  resolveProvider,
   envValue,
   safeEqual,
   makeRateLimiter,
@@ -23,10 +20,9 @@ exports.handler = async (event) => {
     return response(405, { error: 'Method not allowed' });
   }
 
-  const nvidiaKey = envValue('NVIDIA_API_KEY');
-  const openRouterKey = envValue('OPENROUTER_API_KEY');
+  const config = resolveProvider();
   const accessToken = envValue('QUANTUM_ACCESS_TOKEN');
-  if ((!nvidiaKey && !openRouterKey) || !accessToken) {
+  if (!config || !accessToken) {
     return response(503, { error: 'Quantum AI is not fully configured in Netlify.' });
   }
 
@@ -52,36 +48,33 @@ exports.handler = async (event) => {
     return response(400, { error: 'Prompt is empty or too long.' });
   }
 
-  try {
-    const provider = nvidiaKey ? 'nvidia' : 'openrouter';
-    const apiKey = nvidiaKey || openRouterKey;
-    let model = provider === 'nvidia'
-      ? (envValue('NVIDIA_MODEL') || NVIDIA_DEFAULT_MODEL)
-      : (envValue('OPENROUTER_MODEL') || 'openrouter/free');
-    if (modelSwap && modelSwap.failed === model) model = modelSwap.works;
+  const provider = config.name;
+  let model = config.model;
+  if (modelSwap && modelSwap.failed === model) model = modelSwap.works;
 
-    let attempt = await callUpstream({ provider, apiKey, model, system, prompt, body, event });
+  try {
+    let attempt = await callUpstream({ config, model, system, prompt, body, event });
 
     /* Konfiguriertes Modell existiert nicht mehr (404) oder ist End-of-Life
        (410): einmal automatisch mit dem Default-Modell erneut versuchen und
        sich den funktionierenden Tausch für diese Lambda-Instanz merken. */
-    if (modelGone(attempt) && provider === 'nvidia' && model !== NVIDIA_DEFAULT_MODEL) {
+    if (modelGone(attempt) && model !== config.defaultModel) {
       logUpstreamIssue({
         status: attempt.upstream.status, model, provider, contentType: attempt.contentType, raw: attempt.raw,
-        message: `Modell nicht mehr verfügbar – automatischer Retry mit ${NVIDIA_DEFAULT_MODEL}`,
+        message: `Modell nicht mehr verfügbar – automatischer Retry mit ${config.defaultModel}`,
       });
-      const retry = await callUpstream({ provider, apiKey, model: NVIDIA_DEFAULT_MODEL, system, prompt, body, event });
-      if (retry.upstream.ok) modelSwap = { failed: model, works: NVIDIA_DEFAULT_MODEL };
+      const retry = await callUpstream({ config, model: config.defaultModel, system, prompt, body, event });
+      if (retry.upstream.ok) modelSwap = { failed: model, works: config.defaultModel };
       attempt = retry;
-      model = NVIDIA_DEFAULT_MODEL;
+      model = config.defaultModel;
     }
 
     const { upstream, contentType, raw, data, parseError } = attempt;
 
     if (!upstream.ok) {
       let cause = data?.error?.message || data?.detail || 'siehe Server-Log';
-      if (modelGone(attempt) && provider === 'nvidia') {
-        const available = await suggestModels(apiKey, model);
+      if (modelGone(attempt) && config.modelsUrl) {
+        const available = await suggestModels(config, model);
         if (available.length) cause += ` — verfügbare Modelle z. B.: ${available.join(', ')}`;
       }
       logUpstreamIssue({ status: upstream.status, model, provider, contentType, raw, message: cause });
@@ -114,8 +107,6 @@ exports.handler = async (event) => {
     return response(200, { text, model: data.model || model, provider });
   } catch (error) {
     const timedOut = error.name === 'TimeoutError' || error.name === 'AbortError';
-    const model = envValue('NVIDIA_MODEL') || NVIDIA_DEFAULT_MODEL;
-    const provider = nvidiaKey ? 'nvidia' : 'openrouter';
     logUpstreamIssue({
       status: timedOut ? `Timeout nach ${UPSTREAM_TIMEOUT_MS} ms` : 'kein HTTP-Status (Netzwerkfehler)',
       model,
@@ -136,15 +127,16 @@ exports.handler = async (event) => {
 };
 
 /* Führt einen Chat-Completions-Aufruf aus und liest die Antwort abgesichert
-   als Text + optional geparstes JSON. */
-async function callUpstream({ provider, apiKey, model, system, prompt, body, event }) {
-  const upstream = await fetch(provider === 'nvidia' ? NVIDIA_URL : OPENROUTER_URL, {
+   als Text + optional geparstes JSON. NVIDIA/Qwen braucht hohe Temperatur
+   samt top_p, alle anderen Provider bekommen die gewünschte Temperatur. */
+async function callUpstream({ config, model, system, prompt, body, event }) {
+  const upstream = await fetch(config.url, {
     method: 'POST',
     signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      ...(config.apiKey ? { Authorization: `Bearer ${config.apiKey}` } : {}),
       'Content-Type': 'application/json',
-      ...(provider === 'openrouter' ? {
+      ...(config.name === 'openrouter' ? {
         'HTTP-Referer': event.headers.origin || event.headers.referer || 'https://quantum.local',
         'X-Title': 'Quantum Neon Chat',
       } : {}),
@@ -155,8 +147,8 @@ async function callUpstream({ provider, apiKey, model, system, prompt, body, eve
         { role: 'system', content: system },
         { role: 'user', content: prompt },
       ],
-      temperature: provider === 'nvidia' ? 1.0 : (Number.isFinite(Number(body.temperature)) ? Number(body.temperature) : 0.35),
-      ...(provider === 'nvidia' ? { top_p: 0.95 } : {}),
+      temperature: config.name === 'nvidia' ? 1.0 : (Number.isFinite(Number(body.temperature)) ? Number(body.temperature) : 0.35),
+      ...(config.name === 'nvidia' ? { top_p: 0.95 } : {}),
       max_tokens: Math.min(Math.max(Number(body.maxTokens) || 7000, 256), 12000),
     }),
   });
@@ -177,11 +169,13 @@ function modelGone(attempt) {
   return !attempt.upstream.ok && (attempt.upstream.status === 404 || attempt.upstream.status === 410);
 }
 
-/* Fragt NVIDIAs Modellliste ab und liefert bis zu acht verfügbare IDs —
-   bevorzugt aus derselben Modellfamilie wie das gewünschte Modell. */
-async function suggestModels(apiKey, wanted) {
+/* Fragt die Modellliste des Providers ab und liefert bis zu acht verfügbare
+   IDs — bevorzugt aus derselben Modellfamilie wie das gewünschte Modell. */
+async function suggestModels(config, wanted) {
   try {
-    const res = await fetch(NVIDIA_MODELS_URL, { headers: { Authorization: `Bearer ${apiKey}` } });
+    const res = await fetch(config.modelsUrl, {
+      headers: config.apiKey ? { Authorization: `Bearer ${config.apiKey}` } : {},
+    });
     if (!res.ok) return [];
     const data = JSON.parse(await res.text());
     const ids = (data.data || []).map((entry) => entry.id).filter(Boolean);
@@ -225,4 +219,3 @@ function response(statusCode, body) {
     body: JSON.stringify(body),
   };
 }
-

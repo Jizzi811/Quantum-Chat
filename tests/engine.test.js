@@ -29,7 +29,7 @@ vm.runInThisContext(fs.readFileSync(path.join(__dirname, '../js/engine.js'), 'ut
 
 test.beforeEach(() => { askCalls = []; calcCalls = []; hasAccessValue = true; });
 
-test('freie Frage geht mit KI-Zugang an NVIDIA und Codeblock wird bereinigt', async () => {
+test('freie Frage geht mit KI-Zugang an das KI-Modell und Codeblock wird bereinigt', async () => {
   askImpl = async () => ({ text: '```\nQuarks sind Elementarteilchen.\n```', model: 'qwen/qwen3-coder' });
   const answer = await Quantum.engine.respond('Was ist ein Quark?');
   assert.equal(askCalls.length, 1);
@@ -37,10 +37,14 @@ test('freie Frage geht mit KI-Zugang an NVIDIA und Codeblock wird bereinigt', as
   assert.equal(answer, 'Quarks sind Elementarteilchen.');
 });
 
-test('NVIDIA-Fehler zeigt konkrete Ursache plus lokale Antwort', async () => {
-  askImpl = async () => { throw new Error('nvidia-Anfrage fehlgeschlagen (HTTP 502): kein Inhalt'); };
+test('KI-Fehler zeigt Provider, konkrete Ursache plus lokale Antwort', async () => {
+  askImpl = async () => {
+    const error = new Error('groq-Anfrage fehlgeschlagen (HTTP 502): kein Inhalt');
+    error.provider = 'groq';
+    throw error;
+  };
   const answer = await Quantum.engine.respond('Erkläre mir Neutronensterne');
-  assert.match(answer, /NVIDIA\/Qwen nicht erreichbar/);
+  assert.match(answer, /Groq nicht erreichbar/);
   assert.match(answer, /HTTP 502/);
   assert.match(answer, /Lokale Antwort:/);
 });

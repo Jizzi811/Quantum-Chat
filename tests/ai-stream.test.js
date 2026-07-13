@@ -4,6 +4,10 @@ const assert = require('node:assert/strict');
 process.env.NVIDIA_API_KEY = 'test-nvidia-key-123';
 process.env.QUANTUM_ACCESS_TOKEN = 'secret-token';
 delete process.env.NVIDIA_MODEL;
+delete process.env.GROQ_API_KEY;
+delete process.env.GROQ_MODEL;
+delete process.env.CUSTOM_AI_URL;
+delete process.env.CUSTOM_AI_MODEL;
 
 let ipCounter = 100;
 function makeRequest(overrides = {}) {
@@ -65,6 +69,28 @@ test('EOL-Modell: Retry mit Default, dann streamen', async () => {
   assert.equal(res.status, 200);
   assert.deepEqual(calls, ['qwen/totes-modell', 'qwen/qwen3.5-122b-a10b']);
   delete process.env.NVIDIA_MODEL;
+});
+
+test('GROQ_API_KEY hat Vorrang: Stream läuft über Groq mit Llama-Default', async () => {
+  process.env.GROQ_API_KEY = 'test-groq-key-456';
+  try {
+    const handler = await loadHandler();
+    let sentUrl = null;
+    let sentAuth = null;
+    global.fetch = async (url, options) => {
+      sentUrl = String(url);
+      sentAuth = options.headers.Authorization;
+      return new Response(SSE_BODY, { status: 200, headers: { 'content-type': 'text/event-stream' } });
+    };
+    const res = await handler(makeRequest());
+    assert.equal(res.status, 200);
+    assert.match(sentUrl, /api\.groq\.com\/openai\/v1\/chat\/completions/);
+    assert.equal(sentAuth, 'Bearer test-groq-key-456');
+    assert.equal(res.headers.get('x-quantum-provider'), 'groq');
+    assert.equal(res.headers.get('x-quantum-model'), 'llama-3.3-70b-versatile');
+  } finally {
+    delete process.env.GROQ_API_KEY;
+  }
 });
 
 test('Upstream-Fehler wird als JSON mit Ursache und Modell gemeldet', async () => {
