@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="css/chat.css" />
   <link rel="stylesheet" href="css/landing.css" />
   <link rel="stylesheet" href="css/tts-studio.css" />
+  <link rel="stylesheet" href="css/sell.css" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚛️</text></svg>" />
 </head>
 <body>
@@ -25,27 +26,70 @@
       <div class="aurora__bloom" id="aurora-bloom"></div>
       <div class="aurora__noise"></div>
     </div>
-    <section class="landing__card" aria-label="Quantum Startseite">
+    <section class="landing__card" aria-label="Quantum — Abo abschließen">
+      <div class="brand-powered" aria-label="powered by NADJ.AI">
+        <span class="brand-powered__label">powered by</span>
+        <svg class="nadj-logo" viewBox="0 0 300 48" role="img" aria-label="NADJ.AI" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="nadjGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#9d4dff" />
+              <stop offset=".55" stop-color="#4d6bff" />
+              <stop offset="1" stop-color="#00f5ff" />
+            </linearGradient>
+          </defs>
+          <path d="M6 6 H16 V42 H6 Z" fill="url(#nadjGrad)" />
+          <path d="M32 6 H42 V42 H32 Z" fill="url(#nadjGrad)" />
+          <path d="M16 6 H24 L42 42 H34 Z" fill="url(#nadjGrad)" />
+          <circle cx="24" cy="24" r="6.4" fill="#0a0420" />
+          <circle cx="24" cy="24" r="6.4" fill="none" stroke="#fff" stroke-width="2.4" />
+          <path d="M43 4 l1.9 5 5 1.9 -5 1.9 -1.9 5 -1.9 -5 -5 -1.9 5 -1.9 Z" fill="#4db8ff" />
+          <text x="66" y="35" font-family="Orbitron, sans-serif" font-weight="800" font-size="30" letter-spacing="1.5" fill="#fff">NADJ<tspan fill="url(#nadjGrad)">.AI</tspan></text>
+        </svg>
+      </div>
+
       <h1 class="landing__title">QUANTUM</h1>
-      <p class="landing__tag">Dein AI Worker im Neon-Style — Skills, Automationen &amp; Live-KI-Chat.</p>
+      <p class="landing__tag">Dein AI&nbsp;Worker im Neon-Style — Chat, Skills, Bild-, Video- &amp; Sprach-Studio.</p>
       <ul class="landing__features">
-        <li><span class="landing__ico">💬</span><span><b>KI-Chat</b><small>Fragen beantwortet das konfigurierte KI-Modell live (z.&nbsp;B. Groq/Llama).</small></span></li>
-        <li><span class="landing__ico">◈</span><span><b>19 Skills</b><small>Rechner, Ideen, Würfel, Übersetzer u.&nbsp;v.&nbsp;m.</small></span></li>
-        <li><span class="landing__ico">🎮</span><span><b>Game Studio</b><small>Baut spielbare Browser-Games per Prompt.</small></span></li>
-        <li><span class="landing__ico">⟳</span><span><b>Automationen</b><small>Trigger &amp; Aktionen — ganz ohne Code.</small></span></li>
+        <li><span class="landing__ico">💬</span><span><b>KI-Chat</b><small>Antworten live vom konfigurierten KI-Modell.</small></span></li>
+        <li><span class="landing__ico">🎨</span><span><b>Bild-Studio</b><small>Bilder aus Text — per Gemini/Imagen.</small></span></li>
+        <li><span class="landing__ico">🎬</span><span><b>Video-Studio</b><small>Remotion-Videos per Prompt generieren.</small></span></li>
         <li><span class="landing__ico">🔊</span><span><b>TTS Studio</b><small>Text zu Sprache mit VoxCPM &amp; Stimm-Design.</small></span></li>
-        <li><span class="landing__ico">🧪</span><span><b>Code Review</b><small>Prüft JSON &amp; Code direkt im Chat.</small></span></li>
-        <li><span class="landing__ico">🔒</span><span><b>Lokal zuerst</b><small>Deine Daten bleiben in deinem Browser.</small></span></li>
+        <li><span class="landing__ico">🎮</span><span><b>Game Studio</b><small>Spielbare Browser-Games per Prompt.</small></span></li>
+        <li><span class="landing__ico">⟳</span><span><b>Automationen</b><small>Trigger &amp; Aktionen — ganz ohne Code.</small></span></li>
       </ul>
+
+      <!-- ── Verkauf / Abo ─────────────────────────────────── -->
+      <div class="sell" data-testid="sell">
+        <div class="sell__price">
+          <span class="sell__amount">11,99&nbsp;€</span>
+          <span class="sell__period">/&nbsp;Monat</span>
+        </div>
+        <p class="sell__meta">Voller Zugang: alle Skills · Bild-, Video- &amp; Sprach-Studio · monatlich kündbar · inkl.&nbsp;MwSt.</p>
+        <button type="button" class="sell__cta" id="btn-subscribe" data-testid="subscribe-btn">Jetzt abonnieren ⚡</button>
+        <div class="sell__methods" aria-label="Zahlungsarten">
+          <span class="sell__method">💳 Visa</span>
+          <span class="sell__method">💳 Mastercard</span>
+          <span class="sell__method">🏦 SEPA-Lastschrift</span>
+        </div>
+        <p class="sell__note" id="sell-note" data-testid="sell-note" role="status"></p>
+      </div>
+
       <form class="landing__access" id="landing-form" autocomplete="off">
-        <label for="landing-token">🔑 KI-Zugangscode (Access Token)</label>
+        <label for="landing-token">🔑 Schon dabei? Dein Zugangscode</label>
         <div class="landing__row">
           <input type="password" id="landing-token" data-testid="landing-token"
                  placeholder="Zugangscode eingeben …" autocomplete="current-password" />
-          <button type="submit" class="landing__start" data-testid="landing-start">STARTEN ⚡</button>
+          <button type="submit" class="landing__start" data-testid="landing-start">START ⚡</button>
         </div>
         <p class="landing__hint" id="landing-hint">Ohne Code startet Quantum im lokalen Demo-Modus (ohne Live-KI-Antworten).</p>
       </form>
+
+      <nav class="sell__legal" aria-label="Rechtliches">
+        <a href="legal/impressum.html">Impressum</a><span>·</span>
+        <a href="legal/datenschutz.html">Datenschutz</a><span>·</span>
+        <a href="legal/agb.html">AGB</a><span>·</span>
+        <a href="legal/widerruf.html">Widerruf</a>
+      </nav>
     </section>
   </div>
 
@@ -102,6 +146,7 @@
           <span>Quantum denkt</span>
           <span class="chat-typing__dots"><i></i><i></i><i></i></span>
         </div>
+        <div class="chat-attachments" id="chat-attachments" data-testid="chat-attachments" hidden></div>
         <form class="chat-input" id="chat-form" data-testid="chat-form" autocomplete="off">
           <textarea
             id="chat-input-field"
@@ -111,6 +156,9 @@
             maxlength="4000"
             rows="1"
           ></textarea>
+          <input type="file" id="upload-input" data-testid="upload-input" hidden
+                 accept=".pdf,.txt,.md,.markdown,.json,.csv,.log,image/*" />
+          <button type="button" class="chat-input__attach" id="btn-upload" data-testid="upload-btn" title="Referenz oder PDF anhängen">📎</button>
           <button type="button" class="chat-input__mic" id="btn-mic" data-testid="mic-btn" title="Diktieren">🎤</button>
           <button type="submit" class="chat-input__send" data-testid="send-btn">
             <span>SENDEN</span>
@@ -152,7 +200,8 @@
   </main>
 
   <footer class="q-footer">
-    <span>QUANTUM v1.0 — eigenständige Demo, inspiriert vom Konzept „AI Worker mit Skills &amp; Automationen“. Läuft komplett lokal in deinem Browser.</span>
+    <span>QUANTUM v1.0 — dein AI Worker mit Skills, Studios &amp; Automationen.</span>
+    <span class="q-footer__powered">powered by <b>NADJ.AI</b></span>
   </footer>
 
   <script src="js/skills.js"></script>
@@ -167,8 +216,12 @@
   <script src="js/codereview.js"></script>
   <script src="js/game-agent.js"></script>
   <script src="js/tts-studio.js"></script>
+  <script src="js/image-studio.js"></script>
+  <script src="js/video-studio.js"></script>
+  <script src="js/uploads.js"></script>
   <script src="js/ai-agents.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/checkout.js"></script>
   <script src="js/landing.js"></script>
 </body>
 </html>

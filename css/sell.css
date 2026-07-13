@@ -1,0 +1,208 @@
+/* ═══════════════════════════════════════════════════════════════
+   QUANTUM — Verkaufsseite, NADJ.AI-Branding & Chat-Upload
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── powered by NADJ.AI (Logo-Lockup) ─────────────────────────── */
+
+.brand-powered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  margin-bottom: 0.6rem;
+}
+
+.brand-powered__label {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.66rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.nadj-logo {
+  width: clamp(150px, 42vw, 210px);
+  height: auto;
+  filter: drop-shadow(0 0 10px rgba(0, 245, 255, 0.35));
+}
+
+/* ── Preis / Abo-Block ────────────────────────────────────────── */
+
+.sell {
+  margin: 0.4rem 0 1.2rem;
+  padding: 1.1rem 1rem 1rem;
+  border: 1px solid rgba(0, 245, 255, 0.28);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(0, 245, 255, 0.06), rgba(157, 77, 255, 0.06));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.sell__price {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.sell__amount {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(2.1rem, 8vw, 3rem);
+  color: #fff;
+  text-shadow: var(--glow-cyan);
+}
+
+.sell__period {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+}
+
+.sell__meta {
+  margin: 0.4rem 0 0.9rem;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+.sell__cta {
+  width: 100%;
+  min-height: 52px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  font-size: 1.05rem;
+  color: var(--bg-void);
+  background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple), var(--neon-magenta));
+  background-size: 200% 100%;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: background-position 0.5s, box-shadow 0.25s, transform 0.1s;
+  box-shadow: 0 0 20px rgba(0, 245, 255, 0.35);
+}
+
+.sell__cta:hover { background-position: 100% 0; box-shadow: 0 0 32px rgba(255, 45, 247, 0.5); }
+.sell__cta:active { transform: scale(0.985); }
+.sell__cta:disabled { opacity: 0.65; cursor: progress; box-shadow: none; }
+
+.sell__methods {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35rem 0.7rem;
+  margin-top: 0.8rem;
+}
+
+.sell__method {
+  font-size: 0.76rem;
+  color: var(--text-dim);
+  padding: 0.2rem 0.55rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.sell__note {
+  min-height: 1.1rem;
+  margin-top: 0.7rem;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+
+.sell__note--error { color: var(--neon-magenta); }
+.sell__note--ok { color: var(--neon-green); }
+
+/* ── Rechtliche Links ─────────────────────────────────────────── */
+
+.sell__legal {
+  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+}
+
+.sell__legal a { color: var(--text-dim); text-decoration: none; border-bottom: 1px dotted currentColor; }
+.sell__legal a:hover { color: var(--neon-cyan); }
+.sell__legal span { color: var(--border-soft); }
+
+/* ── Footer-Branding ──────────────────────────────────────────── */
+
+.q-footer__powered {
+  margin-left: 0.6rem;
+  color: var(--text-dim);
+}
+
+.q-footer__powered b {
+  background: linear-gradient(90deg, var(--neon-purple), var(--neon-cyan));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/* ── Chat: Upload-Button & Anhänge-Chips ──────────────────────── */
+
+.chat-input__attach {
+  flex: 0 0 auto;
+  background: none;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  color: var(--text-main);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0 0.6rem;
+  min-width: 44px;
+  min-height: 44px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.chat-input__attach:hover { border-color: var(--neon-cyan); box-shadow: 0 0 10px rgba(0, 245, 255, 0.3); }
+.chat-input__attach.is-busy { opacity: 0.6; cursor: progress; }
+
+.chat-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.5rem 0.75rem 0;
+}
+
+.chat-attachments[hidden] { display: none; }
+
+.chat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  max-width: 100%;
+  font-size: 0.8rem;
+  color: var(--text-main);
+  background: var(--bg-glass);
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  padding: 0.25rem 0.35rem 0.25rem 0.7rem;
+}
+
+.chat-chip__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60vw; }
+.chat-chip__meta { color: var(--text-dim); font-size: 0.72rem; }
+
+.chat-chip__remove {
+  border: none;
+  background: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 0.1rem 0.3rem;
+  border-radius: 50%;
+}
+
+.chat-chip__remove:hover { color: var(--neon-magenta); }
+
+@media (max-width: 600px) {
+  .sell__cta { font-size: 1rem; }
+  .chat-input__attach { min-width: 44px; }
+}
