@@ -59,6 +59,9 @@ window.Quantum = window.Quantum || {};
     if (!/<button\b/i.test(html) && !/(start|play|restart|neustart|nochmal)/i.test(html)) {
       issues.push('Es fehlt eine erkennbare Start- oder Neustart-Steuerung.');
     }
+    if (!/name=["']viewport["']/i.test(html)) {
+      issues.push('Fehlt: <meta name="viewport"> für Mobilgeräte.');
+    }
     issues.push(...scriptIssues(html));
     return { approved: issues.length === 0, issues };
   }
@@ -91,6 +94,13 @@ window.Quantum = window.Quantum || {};
     if (/<body\b/i.test(out) && !/<\/body>/i.test(out)) out += '</body>';
     if (/<html\b/i.test(out) && !/<\/html>/i.test(out)) out += '</html>';
     if (!/<!doctype html>/i.test(out)) out = '<!doctype html>' + out;
+    /* Handy-Tauglichkeit: fehlendes Viewport-Meta nachrüsten */
+    if (!/name=["']viewport["']/i.test(out)) {
+      const meta = '<meta name="viewport" content="width=device-width,initial-scale=1">';
+      out = /<head[^>]*>/i.test(out)
+        ? out.replace(/<head[^>]*>/i, '$&' + meta)
+        : out.replace(/<!doctype html>/i, '$&' + meta);
+    }
     return out;
   }
 
@@ -130,8 +140,13 @@ window.Quantum = window.Quantum || {};
           system: 'You are an award-winning browser game studio. Return only one complete standalone HTML document with embedded CSS and JavaScript.'
             + ' The game must be immediately playable and feel polished, with a neon-cyberpunk look: dark background (#0a0a18), glowing accents'
             + ' (cyan #26f7ff, magenta #ff3b81), CSS glow/box-shadow effects, a centered responsive layout and clean typography.'
-            + ' Render the game on a large <canvas> (fills most of the viewport) with smooth requestAnimationFrame animation and juicy feedback:'
-            + ' particles, flashes or shake on scoring and losing. Include a title, short instructions, a live score display,'
+            + ' Render the game on a large <canvas> with smooth requestAnimationFrame animation and juicy feedback:'
+            + ' particles, flashes or shake on scoring and losing.'
+            + ' The layout must be mobile-first and fit ENTIRELY into one phone viewport with no page scrolling:'
+            + ' include <meta name="viewport" content="width=device-width, initial-scale=1">, use a flex column sized with 100dvh (fallback 100vh),'
+            + ' size the canvas from the remaining flex space instead of fixed pixels, keep header and HUD compact,'
+            + ' and keep on-screen touch controls small and fully visible above the bottom edge (respect env(safe-area-inset-bottom)).'
+            + ' Include a title, short instructions, a live score display,'
             + ' gradually increasing difficulty, a clear win/loss state and a start/restart button. Support both keyboard and touch controls.'
             + ' All visible text must be German. No explanation, no markdown fences, no external assets, fonts, libraries, network calls,'
             + ' browser storage, navigation, iframe, object or embed. Do not think out loud or plan in prose — start with <!doctype html> immediately.',
