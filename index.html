@@ -101,14 +101,14 @@
           <span class="chat-typing__dots"><i></i><i></i><i></i></span>
         </div>
         <form class="chat-input" id="chat-form" data-testid="chat-form" autocomplete="off">
-          <input
-            type="text"
+          <textarea
             id="chat-input-field"
             class="chat-input__field"
             data-testid="chat-input"
-            placeholder="Frag Quantum irgendwas… (/help für Befehle)"
-            maxlength="500"
-          />
+            placeholder="Frag Quantum irgendwas… (/help für Befehle · Shift+Enter für neue Zeile)"
+            maxlength="4000"
+            rows="1"
+          ></textarea>
           <button type="button" class="chat-input__mic" id="btn-mic" data-testid="mic-btn" title="Diktieren">🎤</button>
           <button type="submit" class="chat-input__send" data-testid="send-btn">
             <span>SENDEN</span>

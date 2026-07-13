@@ -64,11 +64,29 @@
     });
   }
 
+  /* Mehrzeilige Eingabe: das Feld wächst mit dem Inhalt (bis zur
+     CSS-Obergrenze), Enter sendet, Shift+Enter macht eine neue Zeile. */
+  function autoGrowInput() {
+    els.input.style.height = 'auto';
+    els.input.style.height = Math.min(els.input.scrollHeight, 160) + 'px';
+  }
+
+  els.input.addEventListener('input', autoGrowInput);
+
+  els.input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (typeof els.form.requestSubmit === 'function') els.form.requestSubmit();
+      else els.form.dispatchEvent(new Event('submit', { cancelable: true }));
+    }
+  });
+
   els.form.addEventListener('submit', (e) => {
     e.preventDefault();
     const text = els.input.value.trim();
     if (!text) return;
     els.input.value = '';
+    autoGrowInput();
     addMessage('user', text);
     window.Quantum.automations.handleMessage(text);
     const answer = window.Quantum.engine.respond(text);

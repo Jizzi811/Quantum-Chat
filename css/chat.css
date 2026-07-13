@@ -290,6 +290,7 @@
 
 .chat-input {
   display: flex;
+  align-items: flex-end;
   gap: 0.6rem;
   padding: 0.8rem;
   background: rgba(0, 0, 0, 0.4);
@@ -304,10 +305,15 @@
   color: var(--text-main);
   font-family: var(--font-body);
   font-size: 1rem;
+  line-height: 1.4;
   padding: 0.65rem 0.9rem;
   outline: none;
   caret-color: var(--neon-cyan);
-  transition: all 0.25s;
+  transition: border-color 0.25s, box-shadow 0.25s;
+  /* Mehrzeilige Eingabe: wächst per JS mit dem Inhalt, bis 160px */
+  resize: none;
+  max-height: 160px;
+  overflow-y: auto;
 }
 
 .chat-input__field::placeholder { color: var(--text-dim); }
