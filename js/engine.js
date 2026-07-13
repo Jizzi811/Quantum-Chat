@@ -135,7 +135,10 @@ window.Quantum = window.Quantum || {};
       (entry.role === 'user' ? 'Nutzer: ' : 'Quantum: ') + entry.text);
     lines.push('Nutzer: ' + text);
     lines.push('Quantum:');
-    return lines.join('\n');
+    /* Hochgeladene Referenzen/PDFs (falls vorhanden) der Anfrage voranstellen. */
+    const context = (window.Quantum.uploads && window.Quantum.uploads.getContext)
+      ? window.Quantum.uploads.getContext() : '';
+    return context + lines.join('\n');
   }
 
   async function aiRespond(text) {
