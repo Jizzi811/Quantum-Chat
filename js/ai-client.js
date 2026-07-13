@@ -25,7 +25,12 @@ window.Quantum = window.Quantum || {};
       sessionStorage.removeItem('quantum.ai.access');
       if (retry) return request(payload, false);
     }
-    if (!res.ok) throw new Error(data.error || 'Quantum AI Gateway ist nicht erreichbar.');
+    if (!res.ok) {
+      const error = new Error(data.error || ('Quantum AI Gateway Fehler (HTTP ' + res.status + ').'));
+      if (data.model) error.model = data.model;
+      if (data.provider) error.provider = data.provider;
+      throw error;
+    }
     return data;
   }
 
@@ -33,5 +38,16 @@ window.Quantum = window.Quantum || {};
     return request({ system, prompt, temperature, maxTokens });
   }
 
-  window.Quantum.ai = { ask, endpoint };
+  function hasAccess() {
+    try { return !!sessionStorage.getItem('quantum.ai.access'); } catch (_) { return false; }
+  }
+
+  function setAccess(token) {
+    try {
+      if (token) sessionStorage.setItem('quantum.ai.access', token);
+      else sessionStorage.removeItem('quantum.ai.access');
+    } catch (_) { /* privater Modus */ }
+  }
+
+  window.Quantum.ai = { ask, endpoint, hasAccess, setAccess };
 })();

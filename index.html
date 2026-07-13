@@ -10,9 +10,43 @@
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/quantum.css" />
   <link rel="stylesheet" href="css/chat.css" />
+  <link rel="stylesheet" href="css/landing.css" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚛️</text></svg>" />
 </head>
 <body>
+  <!-- ══════════ LANDING / AURORA HERO ══════════ -->
+  <div class="landing" id="landing" data-testid="landing" hidden>
+    <div class="aurora" aria-hidden="true">
+      <div class="aurora__layer" id="aurora-layer-1"></div>
+      <div class="aurora__layer" id="aurora-layer-2"></div>
+      <div class="aurora__layer" id="aurora-layer-3"></div>
+      <div class="aurora__light" id="aurora-light"></div>
+      <div class="aurora__bloom" id="aurora-bloom"></div>
+      <div class="aurora__noise"></div>
+    </div>
+    <section class="landing__card" aria-label="Quantum Startseite">
+      <h1 class="landing__title">QUANTUM</h1>
+      <p class="landing__tag">Dein AI Worker im Neon-Style — Skills, Automationen &amp; NVIDIA/Qwen-Chat.</p>
+      <ul class="landing__features">
+        <li><span class="landing__ico">💬</span><span><b>KI-Chat</b><small>Fragen beantwortet das NVIDIA/Qwen-Modell live.</small></span></li>
+        <li><span class="landing__ico">◈</span><span><b>19 Skills</b><small>Rechner, Ideen, Würfel, Übersetzer u.&nbsp;v.&nbsp;m.</small></span></li>
+        <li><span class="landing__ico">🎮</span><span><b>Game Studio</b><small>Baut spielbare Browser-Games per Prompt.</small></span></li>
+        <li><span class="landing__ico">⟳</span><span><b>Automationen</b><small>Trigger &amp; Aktionen — ganz ohne Code.</small></span></li>
+        <li><span class="landing__ico">🧪</span><span><b>Code Review</b><small>Prüft JSON &amp; Code direkt im Chat.</small></span></li>
+        <li><span class="landing__ico">🔒</span><span><b>Lokal zuerst</b><small>Deine Daten bleiben in deinem Browser.</small></span></li>
+      </ul>
+      <form class="landing__access" id="landing-form" autocomplete="off">
+        <label for="landing-token">🔑 KI-Zugangscode (Access Token)</label>
+        <div class="landing__row">
+          <input type="password" id="landing-token" data-testid="landing-token"
+                 placeholder="Zugangscode eingeben …" autocomplete="current-password" />
+          <button type="submit" class="landing__start" data-testid="landing-start">STARTEN ⚡</button>
+        </div>
+        <p class="landing__hint" id="landing-hint">Ohne Code startet Quantum im lokalen Demo-Modus (ohne NVIDIA-Antworten).</p>
+      </form>
+    </section>
+  </div>
+
   <div class="bg-grid" aria-hidden="true"></div>
   <div class="bg-orb bg-orb--cyan" aria-hidden="true"></div>
   <div class="bg-orb bg-orb--magenta" aria-hidden="true"></div>
@@ -31,6 +65,8 @@
       <span class="q-status__label">ONLINE</span>
       <span class="q-status__sep">|</span>
       <span class="q-status__clock" id="q-clock">--:--:--</span>
+      <button class="q-status__key" id="btn-ai-access" data-testid="ai-access-btn"
+              title="Startseite &amp; KI-Zugangscode öffnen">🔑</button>
     </div>
   </header>
 
@@ -118,6 +154,7 @@
   </footer>
 
   <script src="js/skills.js"></script>
+  <script src="js/model-response.js"></script>
   <script src="js/ai-client.js"></script>
   <script src="js/engine.js"></script>
   <script src="js/automations.js"></script>
@@ -129,5 +166,6 @@
   <script src="js/game-agent.js"></script>
   <script src="js/ai-agents.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/landing.js"></script>
 </body>
 </html>

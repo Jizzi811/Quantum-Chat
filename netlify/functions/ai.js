@@ -1,3 +1,5 @@
+const { contentToText } = require('../../js/model-response.js');
+
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const NVIDIA_URL = 'https://integrate.api.nvidia.com/v1/chat/completions';
 const NVIDIA_DEFAULT_MODEL = 'nvidia/nemotron-3-super-120b-a12b';
@@ -64,17 +66,83 @@ exports.handler = async (event) => {
         max_tokens: Math.min(Math.max(Number(body.maxTokens) || 7000, 256), 12000),
       }),
     });
-    const data = await upstream.json();
-    if (!upstream.ok) {
-      return response(upstream.status, { error: data.error?.message || `${provider} request failed.` });
+    const contentType = upstream.headers.get('content-type') || 'unbekannt';
+    const raw = await upstream.text();
+    let data = null;
+    let parseError = null;
+    try {
+      data = raw ? JSON.parse(raw) : null;
+    } catch (error) {
+      parseError = error;
     }
-    const text = data.choices?.[0]?.message?.content;
-    if (!text) return response(502, { error: 'The model returned no content.' });
+
+    if (!upstream.ok) {
+      const cause = data?.error?.message || data?.detail || 'siehe Server-Log';
+      logUpstreamIssue({ status: upstream.status, model, provider, contentType, raw, message: cause });
+      return response(upstream.status, {
+        error: `${provider}-Anfrage fehlgeschlagen (HTTP ${upstream.status}): ${cause}`,
+        model,
+        provider,
+      });
+    }
+    if (!data || typeof data !== 'object') {
+      logUpstreamIssue({
+        status: upstream.status, model, provider, contentType, raw,
+        message: parseError ? parseError.message : 'Leerer Antwort-Body',
+      });
+      return response(502, {
+        error: `Antwort von ${provider} war kein gültiges JSON (content-type: ${contentType}).`,
+        model,
+        provider,
+      });
+    }
+
+    const text = normalizeContent(data.choices?.[0]?.message?.content);
+    if (!text) {
+      logUpstreamIssue({
+        status: upstream.status, model: data.model || model, provider, contentType, raw,
+        message: 'Das Modell hat keinen Inhalt geliefert (choices[0].message.content leer).',
+      });
+      return response(502, { error: 'Das Modell hat keinen Inhalt geliefert.', model: data.model || model, provider });
+    }
     return response(200, { text, model: data.model || model, provider });
   } catch (error) {
+    logUpstreamIssue({
+      status: 'kein HTTP-Status (Netzwerkfehler)',
+      model: process.env.NVIDIA_MODEL || NVIDIA_DEFAULT_MODEL,
+      provider: nvidiaKey ? 'nvidia' : 'openrouter',
+      contentType: 'unbekannt',
+      raw: '',
+      message: error.message || 'unbekannter Fehler',
+    });
     return response(502, { error: error.message || 'The configured AI provider is unavailable.' });
   }
 };
+
+// content kann String, Array von Parts oder bereits geparstes Objekt sein.
+// Objekte werden serialisiert statt sie später erneut durch JSON.parse zu jagen.
+function normalizeContent(content) {
+  if (content === null || content === undefined) return '';
+  const text = contentToText(content);
+  if (text !== null) return text.trim();
+  try {
+    return JSON.stringify(content);
+  } catch (_) {
+    return '';
+  }
+}
+
+// Loggt Diagnosedaten serverseitig (Netlify Function Log). Niemals den API-Key.
+function logUpstreamIssue({ status, model, provider, contentType, raw, message }) {
+  console.error('[quantum-ai] Upstream-Problem', {
+    httpStatus: status,
+    provider,
+    model,
+    contentType,
+    rawPreview: String(raw || '').slice(0, 500),
+    error: message,
+  });
+}
 
 function response(statusCode, body) {
   return {

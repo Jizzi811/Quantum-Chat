@@ -83,8 +83,10 @@ window.Quantum = window.Quantum || {};
       const prompt = input.trim();
       if (!prompt) return 'Beschreibe dein Spiel, z. B. `/skill game Neon-Reaktionsspiel mit 30 Sekunden Timer`.';
       const spec = design(prompt);
-      let html;
+      let html = null;
       let model = 'lokaler Fallback';
+      let usedFallback = false;
+      let aiStatus;
       try {
         const result = await window.Quantum.ai.ask({
           system: 'You are a browser game studio. Return only one compact complete standalone HTML document with embedded CSS and JavaScript, under 300 lines. It must be immediately playable and responsive, with instructions, controls, objective, score, win/loss and a start or restart button. No explanation, markdown fences, external assets, libraries, network calls, browser storage, navigation, iframe, object or embed.',
@@ -92,16 +94,28 @@ window.Quantum = window.Quantum || {};
           temperature: 0.45,
           maxTokens: 4000,
         });
-        const fenced = String(result.text).match(/```(?:html)?\s*([\s\S]*?)```/i);
-        html = (fenced ? fenced[1] : result.text).trim();
-        model = result.model;
+        const extracted = window.Quantum.modelResponse.extractHtml(result.text);
+        if (extracted) {
+          html = extracted;
+          model = result.model || 'unbekanntes Modell';
+          aiStatus = '✓ NVIDIA/Qwen erfolgreich (`' + model + '`)';
+        } else {
+          usedFallback = true;
+          aiStatus = '⚠️ NVIDIA/Qwen lieferte kein verwertbares HTML (`' + (result.model || 'unbekanntes Modell') + '`) – lokaler Fallback aktiv';
+        }
       } catch (error) {
+        usedFallback = true;
+        aiStatus = '⚠️ NVIDIA/Qwen fehlgeschlagen (`' + (error.model || 'Modell unbekannt') + '`): '
+          + (error.message || 'nicht erreichbar') + ' – lokaler Fallback aktiv';
+      }
+      if (usedFallback) {
         html = build(spec);
-        model = 'lokaler Fallback – ' + (error.message || 'NVIDIA nicht erreichbar');
+        model = 'lokaler Fallback';
       }
       let report = review(html);
+      const hadIssues = !report.approved;
       let repaired = false;
-      if (!report.approved) {
+      if (hadIssues || usedFallback) {
         html = repair(html);
         report = review(html);
         repaired = true;
@@ -110,10 +124,13 @@ window.Quantum = window.Quantum || {};
       preview(html, spec.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'));
       return [
         '🎮 **BROWSER GAME STUDIO**',
+        aiStatus,
         '✓ Game Designer: Spezifikation erstellt (' + spec.mode + ')',
         '✓ Game Builder: eigenständige HTML-Datei gebaut (`' + model + '`)',
         '✓ Game Reviewer: Spielbarkeit und Sandbox-Regeln geprüft',
-        repaired ? '✓ Repair Agent: Sicherheitskorrektur durchgeführt' : '✓ Repair Agent: nicht nötig',
+        repaired
+          ? '✓ Repair Agent: automatisch ausgeführt (' + (hadIssues ? 'Validierungsfehler korrigiert' : 'Fallback-Ausgabe bereinigt') + ')'
+          : '✓ Repair Agent: nicht nötig',
         '',
         '**' + spec.title + '** wurde in einem neuen Browser-Tab gestartet.',
         'Falls dein Browser Pop-ups blockiert, wird die HTML-Datei stattdessen heruntergeladen.',

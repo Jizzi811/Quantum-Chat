@@ -1,0 +1,249 @@
+/* ═══════════════════════════════════════════════════════════════
+   QUANTUM — Landing / Aurora Hero
+   Interaktiver Aurora-Gradient im Neon-Style: additive geblendete,
+   weiche Farb-Blobs, Parallax-Ebenen, Cursor-Bloom, Grain-Overlay,
+   Glassmorphism-Karte. GPU-freundlich (translate3d, will-change).
+   ═══════════════════════════════════════════════════════════════ */
+
+.landing {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(120vw 80vh at 50% 115%, #12063a 0%, transparent 60%),
+    var(--bg-void, #030014);
+  opacity: 1;
+  transition: opacity 0.6s ease;
+}
+
+.landing--closing { opacity: 0; pointer-events: none; }
+.landing[hidden] { display: none; }
+
+/* ── Aurora-Ebenen (Parallax) ─────────────────────────────────── */
+
+.aurora, .aurora__layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.aurora__layer { will-change: transform; }
+
+.aurora__blob {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 50%;
+  mix-blend-mode: screen;           /* additives/aufhellendes Blending */
+  filter: blur(48px);
+  will-change: transform, opacity;
+  transform: translate3d(-50%, -50%, 0);
+}
+
+/* Radiales Licht, das dem Cursor weich folgt */
+.aurora__light {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 70vmax;
+  height: 70vmax;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    rgba(120, 140, 255, 0.10) 0%,
+    rgba(0, 245, 255, 0.05) 35%,
+    transparent 70%);
+  mix-blend-mode: screen;
+  will-change: transform;
+  transform: translate3d(-50%, -50%, 0);
+}
+
+/* Bloom: heller Kern um den Cursor, blendet nach Bewegung weich aus */
+.aurora__bloom {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 34vmax;
+  height: 34vmax;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    rgba(255, 255, 255, 0.16) 0%,
+    rgba(0, 245, 255, 0.18) 22%,
+    rgba(157, 77, 255, 0.14) 45%,
+    transparent 70%);
+  mix-blend-mode: screen;
+  opacity: 0;
+  will-change: transform, opacity;
+  transform: translate3d(-50%, -50%, 0);
+}
+
+/* Feines animiertes Korn/Noise für Tiefe (SVG-Turbulenz als Data-URI) */
+.aurora__noise {
+  position: absolute;
+  inset: -60px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  opacity: 0.055;
+  mix-blend-mode: overlay;
+  animation: grain-shift 1.2s steps(4) infinite;
+  pointer-events: none;
+}
+
+@keyframes grain-shift {
+  0%   { transform: translate3d(0, 0, 0); }
+  25%  { transform: translate3d(-22px, 14px, 0); }
+  50%  { transform: translate3d(16px, -20px, 0); }
+  75%  { transform: translate3d(-12px, -10px, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+
+/* ── Glassmorphism-Karte ──────────────────────────────────────── */
+
+.landing__card {
+  position: relative;
+  z-index: 2;
+  width: min(92vw, 620px);
+  max-height: 92vh;
+  overflow-y: auto;
+  padding: clamp(1.4rem, 4vw, 2.6rem);
+  border-radius: 22px;
+  background: rgba(13, 6, 44, 0.42);
+  border: 1px solid rgba(157, 77, 255, 0.35);
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  box-shadow:
+    0 0 0 1px rgba(0, 245, 255, 0.08),
+    0 20px 60px rgba(3, 0, 20, 0.7),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  text-align: center;
+}
+
+.landing__title {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 7vw, 3.4rem);
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  color: #fff;
+  text-shadow: var(--glow-cyan), 0 0 60px rgba(157, 77, 255, 0.7);
+}
+
+.landing__tag {
+  margin: 0.5rem 0 1.4rem;
+  color: var(--text-dim);
+  font-size: clamp(1rem, 2.6vw, 1.15rem);
+  letter-spacing: 0.06em;
+}
+
+.landing__features {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem 0.9rem;
+  margin: 0 0 1.6rem;
+  text-align: left;
+}
+
+.landing__features li {
+  display: flex;
+  gap: 0.55rem;
+  align-items: baseline;
+  font-size: 0.98rem;
+  color: var(--text-main);
+  line-height: 1.35;
+}
+
+.landing__features b { color: var(--neon-cyan); font-weight: 600; }
+.landing__features small { color: var(--text-dim); display: block; }
+.landing__features .landing__ico { flex: 0 0 auto; }
+
+/* ── Access-Token / Start ─────────────────────────────────────── */
+
+.landing__access label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  color: var(--neon-cyan);
+  text-transform: uppercase;
+}
+
+.landing__row {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+#landing-token {
+  flex: 1 1 220px;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--border-soft);
+  background: rgba(3, 0, 20, 0.6);
+  color: var(--text-main);
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+#landing-token:focus {
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 0 1px var(--neon-cyan), 0 0 18px rgba(0, 245, 255, 0.25);
+}
+
+.landing__start {
+  padding: 0.75rem 1.6rem;
+  border: 1px solid var(--neon-magenta);
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(157, 77, 255, 0.35), rgba(255, 45, 247, 0.25));
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 0 14px rgba(255, 45, 247, 0.35);
+}
+
+.landing__start:hover { transform: translateY(-1px); box-shadow: 0 0 26px rgba(255, 45, 247, 0.55); }
+.landing__start:active { transform: translateY(1px) scale(0.98); }
+
+.landing__hint {
+  margin-top: 0.8rem;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.landing__hint--ok { color: var(--neon-green); text-shadow: var(--glow-green); }
+
+/* Header-Button zum Wiederöffnen der Startseite */
+.q-status__key {
+  margin-left: 0.6rem;
+  background: none;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  color: var(--text-main);
+  padding: 0.15rem 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.q-status__key:hover { border-color: var(--neon-cyan); box-shadow: 0 0 10px rgba(0, 245, 255, 0.3); }
+
+/* ── Mobil & Barrierefreiheit: Intensität reduzieren ──────────── */
+
+@media (max-width: 720px), (pointer: coarse) {
+  .aurora__blob { filter: blur(34px); }
+  .aurora__noise { animation: none; }
+  .landing__features { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora__noise { animation: none; }
+  .landing { transition: none; }
+}

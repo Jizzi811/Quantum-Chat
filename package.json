@@ -1,0 +1,8 @@
+{
+  "name": "quantum-chat",
+  "private": true,
+  "description": "Quantum Neon Chat – statische App mit Netlify Function als NVIDIA/OpenRouter-Gateway",
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  }
+}
