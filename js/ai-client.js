@@ -25,7 +25,12 @@ window.Quantum = window.Quantum || {};
       sessionStorage.removeItem('quantum.ai.access');
       if (retry) return request(payload, false);
     }
-    if (!res.ok) throw new Error(data.error || 'Quantum AI Gateway ist nicht erreichbar.');
+    if (!res.ok) {
+      const error = new Error(data.error || ('Quantum AI Gateway Fehler (HTTP ' + res.status + ').'));
+      if (data.model) error.model = data.model;
+      if (data.provider) error.provider = data.provider;
+      throw error;
+    }
     return data;
   }
 
