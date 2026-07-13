@@ -38,5 +38,16 @@ window.Quantum = window.Quantum || {};
     return request({ system, prompt, temperature, maxTokens });
   }
 
-  window.Quantum.ai = { ask, endpoint };
+  function hasAccess() {
+    try { return !!sessionStorage.getItem('quantum.ai.access'); } catch (_) { return false; }
+  }
+
+  function setAccess(token) {
+    try {
+      if (token) sessionStorage.setItem('quantum.ai.access', token);
+      else sessionStorage.removeItem('quantum.ai.access');
+    } catch (_) { /* privater Modus */ }
+  }
+
+  window.Quantum.ai = { ask, endpoint, hasAccess, setAccess };
 })();

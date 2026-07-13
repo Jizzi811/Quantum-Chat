@@ -99,6 +99,57 @@ window.Quantum = window.Quantum || {};
     { re: /^[\d\s+\-*/().^%]+$/, fn: (text) => window.Quantum.skills.run('rechner', text) },
   ];
 
+  /* ── NVIDIA/Qwen-Chat ─────────────────────────────────────────
+     Ist ein KI-Zugangscode gesetzt, beantwortet das NVIDIA-Modell
+     alle freien Fragen (Befehle und Skill-Sessions bleiben lokal).
+     Ohne Zugang bleibt Quantum im lokalen Demo-Modus. */
+
+  const CHAT_SYSTEM = [
+    'Du bist QUANTUM, ein hilfsbereiter AI Worker mit Neon-Cyberpunk-Persönlichkeit:',
+    'locker, präzise, gelegentlich ein trockener Witz. Antworte in der Sprache des',
+    'Nutzers (meist Deutsch), kurz und konkret. Formatierung: nur **fett** und',
+    '`code`, keine Überschriften, keine Links, kein HTML.',
+  ].join(' ');
+
+  const history = [];
+
+  function remember(role, text) {
+    history.push({ role, text: String(text).slice(0, 500) });
+    if (history.length > 12) history.shift();
+  }
+
+  window.Quantum.bus.on('botmessage', (text) => remember('assistant', text));
+
+  function aiAvailable() {
+    const ai = window.Quantum.ai;
+    return !!(ai && ai.hasAccess && ai.hasAccess());
+  }
+
+  function buildChatPrompt(text) {
+    const lines = history.map((entry) =>
+      (entry.role === 'user' ? 'Nutzer: ' : 'Quantum: ') + entry.text);
+    lines.push('Nutzer: ' + text);
+    lines.push('Quantum:');
+    return lines.join('\n');
+  }
+
+  async function aiRespond(text) {
+    try {
+      const result = await window.Quantum.ai.ask({
+        system: CHAT_SYSTEM,
+        prompt: buildChatPrompt(text),
+        temperature: 0.6,
+        maxTokens: 1200,
+      });
+      const parsed = window.Quantum.modelResponse.parse(result.text);
+      const answer = (parsed.kind === 'html' ? parsed.html : parsed.text) || String(result.text);
+      return answer.trim() || pick(FALLBACKS);
+    } catch (error) {
+      return '⚠️ NVIDIA/Qwen nicht erreichbar: ' + (error.message || 'unbekannter Fehler') +
+        '\nLokale Antwort: ' + pick(FALLBACKS);
+    }
+  }
+
   /* Aktive Skill-Session (z. B. laufender Fragebogen): solange gesetzt,
      bekommt sie jede Nachricht zuerst; gibt sie undefined zurück,
      greift das normale Routing */
@@ -120,6 +171,8 @@ window.Quantum = window.Quantum || {};
         if (out !== undefined && out !== null) return out;
       }
 
+      if (!text.startsWith('/')) remember('user', text);
+
       if (text.startsWith('/')) {
         const [cmd, ...rest] = text.slice(1).split(/\s+/);
         const arg = rest.join(' ');
@@ -139,10 +192,17 @@ window.Quantum = window.Quantum || {};
         }
       }
 
+      /* Reine Rechenausdrücke immer sofort lokal lösen */
+      if (/^[\d\s+\-*/().^%]+$/.test(text)) return window.Quantum.skills.run('rechner', text);
+
+      /* Mit KI-Zugang gehen freie Fragen an das NVIDIA/Qwen-Modell */
+      if (aiAvailable()) return aiRespond(text);
+
       for (const intent of INTENTS) {
         if (intent.re.test(text)) return intent.fn(text);
       }
-      return pick(FALLBACKS);
+      return pick(FALLBACKS) +
+        '\n\n💡 Tipp: Mit einem KI-Zugangscode (🔑 oben rechts) beantwortet das NVIDIA/Qwen-Modell solche Fragen live.';
     },
   };
 })();
