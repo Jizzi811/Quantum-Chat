@@ -56,6 +56,28 @@ test('Unbrauchbare Antwort (kein HTML): Fallback + automatischer Repair Agent', 
   assert.ok(!output.includes('Repair Agent: nicht nötig'));
 });
 
+test('Streaming wird bevorzugt; bei Stream-Fehler klassischer Aufruf', async () => {
+  let streamCalls = 0;
+  let askCalls = 0;
+  Quantum.ai.askStream = async () => { streamCalls += 1; throw new Error('Stream kaputt'); };
+  Quantum.ai.ask = async () => { askCalls += 1; return { text: VALID_GAME_HTML, model: 'qwen/qwen3.5-122b-a10b' }; };
+  const output = await registeredSkill.run('Neon-Reaktionsspiel');
+  assert.equal(streamCalls, 1, 'Stream wird zuerst versucht');
+  assert.equal(askCalls, 1, 'klassischer Aufruf als Fallback');
+  assert.match(output, /NVIDIA\/Qwen erfolgreich/);
+  delete Quantum.ai.askStream;
+});
+
+test('erfolgreicher Stream macht klassischen Aufruf überflüssig', async () => {
+  let askCalls = 0;
+  Quantum.ai.askStream = async () => ({ text: VALID_GAME_HTML, model: 'qwen/qwen3.5-122b-a10b' });
+  Quantum.ai.ask = async () => { askCalls += 1; return { text: VALID_GAME_HTML }; };
+  const output = await registeredSkill.run('Neon-Reaktionsspiel');
+  assert.equal(askCalls, 0);
+  assert.match(output, /NVIDIA\/Qwen erfolgreich/);
+  delete Quantum.ai.askStream;
+});
+
 test('JSON-Antwort mit html-Feld wird als Spiel akzeptiert', async () => {
   Quantum.ai.ask = async () => ({
     text: 'Hier dein Spiel:\n```json\n' + JSON.stringify({ html: VALID_GAME_HTML }) + '\n```',
