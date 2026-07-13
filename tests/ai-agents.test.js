@@ -53,6 +53,32 @@ test('website: unvollständiges HTML wirft verständlichen Fehler', async () => 
   await assert.rejects(() => skills.website.run('Landingpage'), /keine vollständige HTML-Seite/);
 });
 
+test('team: Planner, Worker und Critic laufen nacheinander, Ausgabe zeigt Plan und finale Fassung', async () => {
+  const roles = [];
+  Quantum.ai.askStream = async (args) => {
+    if (/PLANNER/.test(args.system)) { roles.push('planner'); return { text: '1. Recherche 2. Entwurf 3. Feinschliff', model: 'gpt-5.4-mini' }; }
+    if (/WORKER/.test(args.system)) {
+      roles.push('worker');
+      assert.match(args.prompt, /Recherche/, 'Worker bekommt den Plan des Planners');
+      return { text: 'Roh-Ergebnis', model: 'gpt-5.4-mini' };
+    }
+    roles.push('critic');
+    assert.match(args.prompt, /Roh-Ergebnis/, 'Critic bekommt das Worker-Ergebnis');
+    return { text: 'Finale, geprüfte Fassung', model: 'gpt-5.4-mini' };
+  };
+  Quantum.ai.ask = async () => { throw new Error('sollte nicht nötig sein'); };
+  const output = await skills.team.run('Businessplan für ein Neon-Café');
+  assert.deepEqual(roles, ['planner', 'worker', 'critic']);
+  assert.match(output, /AUTOGEN AGENT-TEAM/);
+  assert.match(output, /Recherche/);
+  assert.match(output, /Finale, geprüfte Fassung/);
+});
+
+test('team: ohne Aufgabe kommt eine Bedienungshilfe', async () => {
+  const output = await skills.team.run('   ');
+  assert.match(output, /skill team/);
+});
+
 test('coding: Streaming wird bevorzugt, Antwort nennt das Modell', async () => {
   let streamCalls = 0;
   Quantum.ai.askStream = async () => { streamCalls += 1; return { text: 'Plan + Code', model: 'gpt-5.4-mini' }; };
