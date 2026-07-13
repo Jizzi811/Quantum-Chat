@@ -103,7 +103,7 @@ window.Quantum = window.Quantum || {};
            klassischen Aufruf mit kompakterem Budget zurück. */
         const ai = window.Quantum.ai;
         const request = {
-          system: 'You are a browser game studio. Return only one complete standalone HTML document with embedded CSS and JavaScript, under 250 lines, compact code. It must be immediately playable and responsive, with instructions, controls, objective, score, win/loss and a start or restart button. No explanation, markdown fences, external assets, libraries, network calls, browser storage, navigation, iframe, object or embed.',
+          system: 'You are a browser game studio. Return only one complete standalone HTML document with embedded CSS and JavaScript, under 250 lines, compact code. It must be immediately playable and responsive, with instructions, controls, objective, score, win/loss and a start or restart button. No explanation, markdown fences, external assets, libraries, network calls, browser storage, navigation, iframe, object or embed. Do not think out loud or plan in prose — start writing the HTML document immediately. /no_think',
           prompt: 'Create this compact browser game: ' + prompt,
           temperature: 0.45,
         };
@@ -124,7 +124,10 @@ window.Quantum = window.Quantum || {};
           aiStatus = '✓ NVIDIA/Qwen erfolgreich (`' + model + '`)';
         } else {
           usedFallback = true;
-          aiStatus = '⚠️ NVIDIA/Qwen lieferte kein verwertbares HTML (`' + (result.model || 'unbekanntes Modell') + '`) – lokaler Fallback aktiv';
+          const snippet = String(result.text || '').replace(/\s+/g, ' ').trim().slice(0, 180);
+          aiStatus = '⚠️ NVIDIA/Qwen lieferte kein verwertbares HTML (`' + (result.model || 'unbekanntes Modell') + '`'
+            + (result.finishReason ? ', finish: ' + result.finishReason : '') + ') – lokaler Fallback aktiv'
+            + (snippet ? '\n· Antwortanfang: „' + snippet + '…“' : '');
         }
       } catch (error) {
         usedFallback = true;
