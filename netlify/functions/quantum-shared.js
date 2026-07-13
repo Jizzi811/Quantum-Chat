@@ -87,6 +87,43 @@ function fallbackModels(config, model) {
   return alternates;
 }
 
+/* Holt die Modell-Liste des Providers (OpenAI-Format: { data: [{ id }] }). */
+async function fetchModelIds(config) {
+  try {
+    const res = await fetch(config.modelsUrl, {
+      headers: config.apiKey ? { Authorization: `Bearer ${config.apiKey}` } : {},
+    });
+    if (!res.ok) return [];
+    const data = JSON.parse(await res.text());
+    return (data.data || []).map((entry) => entry.id).filter(Boolean);
+  } catch (_) {
+    return [];
+  }
+}
+
+/* Wählt aus Googles Modell-Liste das beste Chat-Modell: höchste Gemini-
+   Version, Flash vor Pro (großzügigerer Free-Tier), stabile Varianten vor
+   Preview/Exp. Nötig, weil Google alte Modelle für neue API-Keys sperrt
+   ("no longer available to new users") und die IDs laufend umbenennt. */
+function pickGeminiModel(ids) {
+  const candidates = ids
+    .map((id) => {
+      const match = /^(?:models\/)?gemini-(\d+(?:\.\d+)?)-(flash|pro)([\w.-]*)$/.exec(id);
+      if (!match) return null;
+      const suffix = match[3] || '';
+      if (/(lite|tts|image|audio|live|robotics|embedding)/i.test(suffix)) return null;
+      return {
+        id,
+        version: parseFloat(match[1]),
+        flash: match[2] === 'flash' ? 1 : 0,
+        stable: suffix === '' ? 1 : 0,
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => (b.version - a.version) || (b.flash - a.flash) || (b.stable - a.stable));
+  return candidates.length ? candidates[0].id : null;
+}
+
 /* Liest eine Umgebungsvariable und bereinigt typische Paste-Fehler aus dem
    Netlify-UI: der Variablenname landet mit im Wert ("NVIDIA_MODEL=qwen/…"),
    umschließende Anführungszeichen oder Leerzeichen. */
@@ -123,6 +160,8 @@ module.exports = {
   PROVIDERS,
   resolveProvider,
   fallbackModels,
+  fetchModelIds,
+  pickGeminiModel,
   envValue,
   safeEqual,
   makeRateLimiter,

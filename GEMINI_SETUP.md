@@ -22,15 +22,17 @@ drinbleiben und dient als einfacher Rückweg — `GEMINI_API_KEY` löschen und
 neu deployen, schon läuft wieder Groq. Die vollständige Prioritätsreihenfolge
 steht in `GROQ_SETUP.md`.
 
-## Empfohlene Gemini-Modelle
+## Modellwahl
 
-| Modell | Eignung |
-| --- | --- |
-| `gemini-2.5-flash` | Standard: stark bei Code/HTML, großzügiger Free-Tier |
-| `gemini-3-flash` | Neuer und oft besser — ID vorher unter <https://ai.google.dev/gemini-api/docs/models> prüfen |
-| `gemini-2.5-flash-lite` | Sparsamer beim Rate-Limit, einfachere Antworten |
+`GEMINI_MODEL` kann in der Regel leer bleiben. Google sperrt ältere Modelle
+für neu erstellte API-Keys ("no longer available to new users") und benennt
+die IDs laufend um — das Gateway fängt das ab: Liefert das konfigurierte
+bzw. Standardmodell ein 404, probiert es automatisch die andere Namensform
+(`gemini-…` ↔ `models/gemini-…`) und wählt notfalls selbst das neueste
+verfügbare Flash-Modell aus Googles Modell-Liste (stabile Version bevorzugt,
+Flash vor Pro wegen des großzügigeren Free-Tiers).
 
-Pro-Modelle (z. B. `gemini-2.5-pro`) sind im Free-Tier auf ~50 Anfragen/Tag
-begrenzt und für Quantum nicht praktikabel. Ist ein konfiguriertes Modell
-nicht mehr verfügbar (HTTP 404/410), wechselt das Gateway automatisch auf
-das Standardmodell zurück.
+Wer ein bestimmtes Modell erzwingen will, prüft die aktuell verfügbaren IDs
+unter <https://ai.google.dev/gemini-api/docs/models> und trägt sie in
+`GEMINI_MODEL` ein. Pro-Modelle sind im Free-Tier stark begrenzt
+(~50 Anfragen/Tag) und für Quantum nicht praktikabel.

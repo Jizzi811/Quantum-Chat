@@ -15,7 +15,7 @@ delete process.env.CUSTOM_AI_URL;
 delete process.env.CUSTOM_AI_MODEL;
 
 const { handler } = require('../netlify/functions/ai.js');
-const { resolveProvider } = require('../netlify/functions/quantum-shared.js');
+const { resolveProvider, pickGeminiModel } = require('../netlify/functions/quantum-shared.js');
 
 let ipCounter = 0;
 function makeEvent(body = {}) {
@@ -179,6 +179,60 @@ test('Gemini-Fehler im Array-Format: Googles Begründung und bereinigte Vorschl�
     assert.match(payload.error, /is not found for API version v1beta/, 'Googles Original-Begründung wird durchgereicht');
     assert.match(payload.error, /models\/gemini-3-flash/, 'neuere Modelle werden vorgeschlagen');
     assert.ok(!payload.error.includes('tts'), 'TTS-Modelle werden nicht vorgeschlagen');
+  } finally {
+    console.error = originalError;
+    delete process.env.GEMINI_API_KEY;
+  }
+});
+
+test('pickGeminiModel wählt neueste stabile Flash-Version, ignoriert Lite/Spezialmodelle', () => {
+  assert.equal(pickGeminiModel([
+    'models/gemini-2.5-flash',
+    'models/gemini-3-flash-preview',
+    'models/gemini-3-flash',
+    'models/gemini-3-pro',
+    'models/gemini-3.1-flash-lite',
+    'models/nano-banana-pro-preview',
+    'models/lyria-3-pro-preview',
+    'models/gemini-robotics-er-1.6-preview',
+  ]), 'models/gemini-3-flash');
+  assert.equal(pickGeminiModel(['models/gemini-3-pro-preview']), 'models/gemini-3-pro-preview');
+  assert.equal(pickGeminiModel(['models/lyria-3-pro-preview']), null);
+});
+
+test('Gemini "no longer available": Gateway wählt automatisch das neueste Flash-Modell', async () => {
+  process.env.GEMINI_API_KEY = 'test-gemini-key-789';
+  const calls = [];
+  global.fetch = async (url, options) => {
+    if (String(url).endsWith('/models')) {
+      return okJson({ data: [
+        { id: 'models/gemini-2.5-flash' },
+        { id: 'models/gemini-3-flash-preview' },
+        { id: 'models/gemini-3-flash' },
+        { id: 'models/gemini-3-pro' },
+        { id: 'models/nano-banana-pro-preview' },
+      ] });
+    }
+    const body = JSON.parse(options.body);
+    calls.push(body.model);
+    if (body.model === 'models/gemini-3-flash') {
+      return okJson({ model: body.model, choices: [{ message: { content: 'ok' } }] });
+    }
+    return {
+      ok: false, status: 404,
+      headers: { get: () => 'application/json' },
+      text: async () => JSON.stringify([{
+        error: { code: 404, message: 'This model is no longer available to new users.', status: 'NOT_FOUND' },
+      }]),
+    };
+  };
+  const originalError = console.error;
+  console.error = () => {};
+  try {
+    const result = await handler(makeEvent());
+    assert.equal(result.statusCode, 200);
+    assert.equal(JSON.parse(result.body).model, 'models/gemini-3-flash');
+    assert.ok(calls.includes('models/gemini-3-flash'), 'Auto-Auswahl wird aufgerufen: ' + calls.join(', '));
   } finally {
     console.error = originalError;
     delete process.env.GEMINI_API_KEY;
