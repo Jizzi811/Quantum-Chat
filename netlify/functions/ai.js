@@ -77,7 +77,7 @@ exports.handler = async (event) => {
     const { upstream, contentType, raw, data, parseError } = attempt;
 
     if (!upstream.ok) {
-      let cause = data?.error?.message || data?.detail || 'siehe Server-Log';
+      let cause = upstreamErrorMessage(data) || 'siehe Server-Log';
       if (modelGone(attempt) && config.modelsUrl) {
         const available = await suggestModels(config, model);
         if (available.length) cause += ` — verfügbare Modelle z. B.: ${available.join(', ')}`;
@@ -174,6 +174,14 @@ function modelGone(attempt) {
   return !attempt.upstream.ok && (attempt.upstream.status === 404 || attempt.upstream.status === 410);
 }
 
+/* Fehlermeldung aus dem Upstream-Body ziehen. Googles OpenAI-kompatibler
+   Endpunkt verpackt Fehler in ein Array ([{ error: … }]), alle anderen
+   liefern ein Objekt ({ error: … } bzw. { detail: … }). */
+function upstreamErrorMessage(data) {
+  const container = Array.isArray(data) ? data[0] : data;
+  return container?.error?.message || container?.detail || null;
+}
+
 /* Fragt die Modellliste des Providers ab und liefert bis zu acht verfügbare
    IDs — bevorzugt aus derselben Modellfamilie wie das gewünschte Modell. */
 async function suggestModels(config, wanted) {
@@ -183,7 +191,11 @@ async function suggestModels(config, wanted) {
     });
     if (!res.ok) return [];
     const data = JSON.parse(await res.text());
-    const ids = (data.data || []).map((entry) => entry.id).filter(Boolean);
+    /* Nur Chat-taugliche Modelle vorschlagen (keine TTS-/Embedding-/Bild-
+       Varianten) und neueste Versionen zuerst zeigen. */
+    const ids = (data.data || []).map((entry) => entry.id).filter(Boolean)
+      .filter((id) => !/(tts|embedding|imagen|veo|audio|live|image)/i.test(id))
+      .sort().reverse();
     const family = String(wanted).split('/')[0].toLowerCase();
     const sameFamily = ids.filter((id) => id.toLowerCase().startsWith(family + '/'));
     return (sameFamily.length ? sameFamily : ids).slice(0, 8);

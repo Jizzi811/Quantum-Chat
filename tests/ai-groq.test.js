@@ -152,6 +152,39 @@ test('Gemini-404 auf der nackten Modell-ID: Retry mit "models/"-Präfix', async 
   }
 });
 
+test('Gemini-Fehler im Array-Format: Googles Begründung und bereinigte Vorschläge', async () => {
+  process.env.GEMINI_API_KEY = 'test-gemini-key-789';
+  global.fetch = async (url) => {
+    if (String(url).endsWith('/models')) {
+      return okJson({ data: [
+        { id: 'models/gemini-2.5-flash-preview-tts' },
+        { id: 'models/gemini-2.5-flash' },
+        { id: 'models/gemini-3-flash' },
+      ] });
+    }
+    return {
+      ok: false, status: 404,
+      headers: { get: () => 'application/json' },
+      text: async () => JSON.stringify([{
+        error: { code: 404, message: 'models/gemini-2.5-flash is not found for API version v1beta', status: 'NOT_FOUND' },
+      }]),
+    };
+  };
+  const originalError = console.error;
+  console.error = () => {};
+  try {
+    const result = await handler(makeEvent());
+    assert.equal(result.statusCode, 404);
+    const payload = JSON.parse(result.body);
+    assert.match(payload.error, /is not found for API version v1beta/, 'Googles Original-Begründung wird durchgereicht');
+    assert.match(payload.error, /models\/gemini-3-flash/, 'neuere Modelle werden vorgeschlagen');
+    assert.ok(!payload.error.includes('tts'), 'TTS-Modelle werden nicht vorgeschlagen');
+  } finally {
+    console.error = originalError;
+    delete process.env.GEMINI_API_KEY;
+  }
+});
+
 test('CUSTOM_AI_URL hat höchste Priorität (OpenAI-kompatibles Gateway, Key optional)', async () => {
   process.env.CUSTOM_AI_URL = 'https://gateway.example.com/v1';
   process.env.CUSTOM_AI_MODEL = 'router/auto';

@@ -73,7 +73,10 @@ export default async function handler(req) {
       let cause = 'siehe Server-Log';
       try {
         const data = JSON.parse(raw);
-        cause = data.error?.message || data.detail || cause;
+        /* Googles OpenAI-kompatibler Endpunkt verpackt Fehler in ein Array
+           ([{ error: … }]), alle anderen liefern ein Objekt. */
+        const container = Array.isArray(data) ? data[0] : data;
+        cause = container?.error?.message || container?.detail || cause;
       } catch (_) { /* Rohtext bleibt im Log */ }
       console.error('[quantum-ai-stream] Upstream-Problem', {
         httpStatus: upstream.status, provider, model,
