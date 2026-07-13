@@ -104,7 +104,7 @@ window.Quantum = window.Quantum || {};
      KI-Modell alle freien Fragen (Befehle und Skill-Sessions bleiben
      lokal). Ohne Zugang bleibt Quantum im lokalen Demo-Modus. */
 
-  const PROVIDER_LABELS = { groq: 'Groq', nvidia: 'NVIDIA/Qwen', openrouter: 'OpenRouter', custom: 'Custom-Gateway' };
+  const PROVIDER_LABELS = { gemini: 'Gemini', groq: 'Groq', nvidia: 'NVIDIA/Qwen', openrouter: 'OpenRouter', custom: 'Custom-Gateway' };
   function providerLabel(id) {
     return PROVIDER_LABELS[String(id || '').toLowerCase()] || 'KI-Modell';
   }
@@ -144,7 +144,9 @@ window.Quantum = window.Quantum || {};
         system: CHAT_SYSTEM,
         prompt: buildChatPrompt(text),
         temperature: 0.6,
-        maxTokens: 1200,
+        /* Genug Luft für Denk-Modelle, die vor der Antwort Reasoning-Tokens
+           verbrauchen (z. B. gpt-oss); die Antwort selbst bleibt kurz. */
+        maxTokens: 2500,
       });
       const parsed = window.Quantum.modelResponse.parse(result.text);
       const answer = (parsed.kind === 'html' ? parsed.html : parsed.text) || String(result.text);

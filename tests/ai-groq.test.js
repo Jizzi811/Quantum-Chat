@@ -9,6 +9,8 @@ process.env.QUANTUM_ACCESS_TOKEN = 'secret-token';
 delete process.env.QUANTUM_ALLOWED_ORIGIN;
 delete process.env.GROQ_MODEL;
 delete process.env.NVIDIA_MODEL;
+delete process.env.GEMINI_API_KEY;
+delete process.env.GEMINI_MODEL;
 delete process.env.CUSTOM_AI_URL;
 delete process.env.CUSTOM_AI_MODEL;
 
@@ -93,6 +95,32 @@ test('GROQ_MODEL wird respektiert; totes Modell (404) fällt auf den Groq-Defaul
   } finally {
     console.error = originalError;
     delete process.env.GROQ_MODEL;
+  }
+});
+
+test('GEMINI_API_KEY hat Vorrang vor Groq: Anfrage geht an Googles OpenAI-Endpunkt', async () => {
+  process.env.GEMINI_API_KEY = 'test-gemini-key-789';
+  try {
+    let sentUrl = null;
+    let sentAuth = null;
+    let sentBody = null;
+    global.fetch = async (url, options) => {
+      sentUrl = String(url);
+      sentAuth = options.headers.Authorization;
+      sentBody = JSON.parse(options.body);
+      return okJson({ model: 'gemini-2.5-flash', choices: [{ message: { content: 'ok' } }] });
+    };
+    const result = await handler(makeEvent({ temperature: 0.6 }));
+    assert.equal(result.statusCode, 200);
+    const payload = JSON.parse(result.body);
+    assert.equal(payload.provider, 'gemini');
+    assert.equal(payload.model, 'gemini-2.5-flash');
+    assert.equal(sentUrl, 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions');
+    assert.equal(sentAuth, 'Bearer test-gemini-key-789');
+    assert.equal(sentBody.model, 'gemini-2.5-flash');
+    assert.equal(sentBody.temperature, 0.6);
+  } finally {
+    delete process.env.GEMINI_API_KEY;
   }
 });
 
