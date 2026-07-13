@@ -14,7 +14,7 @@
    - QUANTUM_ALLOWED_ORIGIN Origin-Schutz (wie beim Chat-Gateway)
    ═══════════════════════════════════════════════════════════════ */
 
-const { envValue, safeEqual, makeRateLimiter } = require('./quantum-shared.js');
+const { envValue, accessTokenList, isValidAccessToken, makeRateLimiter } = require('./quantum-shared.js');
 
 const UPSTREAM_TIMEOUT_MS = 9000;
 const DEFAULT_MODEL = 'imagen-3.0-generate-002';
@@ -48,8 +48,7 @@ exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') return response(405, { error: 'Method not allowed' });
 
   const key = envValue('GEMINI_IMAGE_API_KEY');
-  const accessToken = envValue('QUANTUM_ACCESS_TOKEN');
-  if (!key || !accessToken) {
+  if (!key || accessTokenList().length === 0) {
     return response(503, {
       error: 'Bildgeneration ist nicht konfiguriert. Bitte GEMINI_IMAGE_API_KEY (nur für Bilder!) und QUANTUM_ACCESS_TOKEN in Netlify hinterlegen.',
     });
@@ -59,7 +58,7 @@ exports.handler = async (event) => {
   const allowedOrigin = envValue('QUANTUM_ALLOWED_ORIGIN');
   if (allowedOrigin && origin && origin !== allowedOrigin) return response(403, { error: 'Origin not allowed.' });
   const provided = String(event.headers.authorization || '').replace(/^Bearer\s+/i, '');
-  if (!safeEqual(provided, accessToken)) return response(401, { error: 'Quantum access code is invalid.' });
+  if (!isValidAccessToken(provided)) return response(401, { error: 'Quantum access code is invalid.' });
   if (!withinRateLimit(event.headers['x-nf-client-connection-ip'] || event.headers['client-ip'] || 'unknown')) {
     return response(429, { error: 'Zu viele Bild-Anfragen. Bitte eine Minute warten.' });
   }

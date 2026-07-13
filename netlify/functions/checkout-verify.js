@@ -11,7 +11,7 @@
    Optional:  QUANTUM_ALLOWED_ORIGIN
    ═══════════════════════════════════════════════════════════════ */
 
-const { envValue, makeRateLimiter } = require('./quantum-shared.js');
+const { envValue, accessTokenList, makeRateLimiter } = require('./quantum-shared.js');
 
 const UPSTREAM_TIMEOUT_MS = 8500;
 const withinRateLimit = makeRateLimiter(15, 60000);
@@ -30,7 +30,7 @@ exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') return response(405, { error: 'Method not allowed' });
 
   const secret = envValue('STRIPE_SECRET_KEY');
-  const accessToken = envValue('QUANTUM_ACCESS_TOKEN');
+  const accessToken = accessTokenList()[0];
   if (!secret || !accessToken) {
     return response(503, { error: 'Zahlungs-Freischaltung ist nicht konfiguriert (STRIPE_SECRET_KEY / QUANTUM_ACCESS_TOKEN fehlen).' });
   }

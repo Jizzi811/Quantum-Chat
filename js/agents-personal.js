@@ -125,31 +125,86 @@ window.Quantum = window.Quantum || {};
 
   /* ── Voice-Agent ───────────────────────────────────────────── */
 
-  let voiceOn = localStorage.getItem('quantum.voice') === '1';
+  const VOICE_KEY = 'quantum.voice';
+  const VOICE_STYLE_KEY = 'quantum.voice.style';
+  /* Feste „Quantum"-Stimme als VoxCPM-Voice-Design-Prompt, damit die Ausgabe
+     immer gleich klingt. Über /skill voice stimme <…> anpassbar. */
+  const DEFAULT_VOICE_STYLE = 'Eine ruhige, freundliche und selbstbewusste deutsche Stimme mit warmem, leicht futuristischem Klang, deutliche Aussprache.';
+
+  let voiceOn = localStorage.getItem(VOICE_KEY) === '1';
+  let currentAudio = null;
+  let speakSeq = 0;
+
+  function voiceStyle() {
+    try { return localStorage.getItem(VOICE_STYLE_KEY) || DEFAULT_VOICE_STYLE; } catch (_) { return DEFAULT_VOICE_STYLE; }
+  }
+
+  function cleanForSpeech(text) {
+    return String(text).replace(/[*_`#]|https?:\/\/\S+/g, '').replace(/\s+/g, ' ').trim().slice(0, 500);
+  }
+
+  function stopSpeaking() {
+    if ('speechSynthesis' in window) speechSynthesis.cancel();
+    if (currentAudio) { try { currentAudio.pause(); } catch (_) { /* egal */ } currentAudio = null; }
+  }
+
+  function speakBrowser(text) {
+    if (!('speechSynthesis' in window)) return;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'de-DE';
+    utterance.rate = 1.05;
+    speechSynthesis.cancel();
+    speechSynthesis.speak(utterance);
+  }
+
+  /* Primär: VoxCPM mit fester Quantum-Stimme. Kommt nichts zurück (Server
+     nicht erreichbar), greift die schnelle Browser-Stimme als Notnagel. */
+  async function speakVox(text, seq) {
+    const tts = window.Quantum.ttsStudio;
+    if (!tts || !tts.generate) { speakBrowser(text); return; }
+    try {
+      const result = await tts.generate({ text, instruction: voiceStyle(), cfg: 2.0, steps: 10 });
+      if (!voiceOn || seq !== speakSeq) return; /* abgeschaltet oder neuere Nachricht */
+      const audio = new Audio(result.url);
+      currentAudio = audio;
+      audio.play().catch(() => { if (voiceOn && seq === speakSeq) speakBrowser(text); });
+    } catch (_) {
+      if (voiceOn && seq === speakSeq) speakBrowser(text);
+    }
+  }
 
   function speak(text) {
-    if (!voiceOn || !('speechSynthesis' in window)) return;
-    const clean = text.replace(/[*_`#]|https?:\/\/\S+/g, '').slice(0, 400);
-    const u = new SpeechSynthesisUtterance(clean);
-    u.lang = 'de-DE';
-    u.rate = 1.05;
-    speechSynthesis.cancel();
-    speechSynthesis.speak(u);
+    if (!voiceOn) return;
+    const clean = cleanForSpeech(text);
+    if (!clean) return;
+    stopSpeaking();
+    speakVox(clean, ++speakSeq);
   }
 
   window.Quantum.bus.on('botmessage', speak);
 
   window.Quantum.skills.register({
     id: 'voice', icon: '🎙', name: 'Voice-Agent',
-    desc: 'Quantum spricht Antworten laut (an/aus)',
-    usage: '/skill voice',
-    run() {
-      if (!('speechSynthesis' in window)) return '🎙 Dein Browser unterstützt keine Sprachausgabe.';
+    desc: 'Quantum spricht Antworten mit VoxCPM-Stimme (an/aus)',
+    usage: '/skill voice  ·  /skill voice stimme <Beschreibung>',
+    run(input) {
+      const raw = String(input || '').trim();
+
+      if (/^(reset|stimme\s+reset)$/i.test(raw)) {
+        try { localStorage.removeItem(VOICE_STYLE_KEY); } catch (_) { /* egal */ }
+        return '🎙 Quantum-Stimme auf Standard zurückgesetzt.';
+      }
+      const style = raw.match(/^stimme\s+(.+)/i);
+      if (style) {
+        try { localStorage.setItem(VOICE_STYLE_KEY, style[1].trim()); } catch (_) { /* egal */ }
+        return '🎙 Quantum-Stimme angepasst: „' + style[1].trim() + '". Gilt ab der nächsten Antwort (bei aktiver Sprachausgabe).';
+      }
+
       voiceOn = !voiceOn;
-      localStorage.setItem('quantum.voice', voiceOn ? '1' : '0');
-      if (!voiceOn) speechSynthesis.cancel();
+      try { localStorage.setItem(VOICE_KEY, voiceOn ? '1' : '0'); } catch (_) { /* egal */ }
+      if (!voiceOn) stopSpeaking();
       return voiceOn
-        ? '🎙 Sprachausgabe **AN** — ich lese meine Antworten jetzt vor. Mit dem 🎤 neben dem Eingabefeld kannst du auch diktieren (falls dein Browser es unterstützt). Nochmal `/skill voice` schaltet ab.'
+        ? '🎙 Sprachausgabe **AN** — Quantum spricht jetzt mit **VoxCPM-Stimme**. Hinweis: Über den kostenlosen Demo-Server kann die erste Antwort einige Sekunden bis 1–2 Minuten dauern (Kaltstart); mit eigenem VoxCPM-Server geht es flott. Klang ändern: `/skill voice stimme <Beschreibung>`. Nochmal `/skill voice` schaltet ab.'
         : '🎙 Sprachausgabe **AUS**.';
     },
   });
