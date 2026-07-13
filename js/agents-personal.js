@@ -134,6 +134,14 @@ window.Quantum = window.Quantum || {};
   let voiceOn = localStorage.getItem(VOICE_KEY) === '1';
   let currentAudio = null;
   let speakSeq = 0;
+  /* Voice-Support-Loop: kam die letzte Frage per Diktat, hört Quantum
+     nach dem Vorlesen der Antwort automatisch wieder zu. */
+  let handsFree = false;
+  let startListening = null;
+
+  function resumeListening() {
+    if (voiceOn && handsFree && startListening) startListening();
+  }
 
   function voiceStyle() {
     try { return localStorage.getItem(VOICE_STYLE_KEY) || DEFAULT_VOICE_STYLE; } catch (_) { return DEFAULT_VOICE_STYLE; }
@@ -153,6 +161,7 @@ window.Quantum = window.Quantum || {};
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'de-DE';
     utterance.rate = 1.05;
+    utterance.onend = resumeListening;
     speechSynthesis.cancel();
     speechSynthesis.speak(utterance);
   }
@@ -167,6 +176,7 @@ window.Quantum = window.Quantum || {};
       if (!voiceOn || seq !== speakSeq) return; /* abgeschaltet oder neuere Nachricht */
       const audio = new Audio(result.url);
       currentAudio = audio;
+      audio.onended = resumeListening;
       audio.play().catch(() => { if (voiceOn && seq === speakSeq) speakBrowser(text); });
     } catch (_) {
       if (voiceOn && seq === speakSeq) speakBrowser(text);
@@ -202,9 +212,9 @@ window.Quantum = window.Quantum || {};
 
       voiceOn = !voiceOn;
       try { localStorage.setItem(VOICE_KEY, voiceOn ? '1' : '0'); } catch (_) { /* egal */ }
-      if (!voiceOn) stopSpeaking();
+      if (!voiceOn) { stopSpeaking(); handsFree = false; }
       return voiceOn
-        ? '🎙 Sprachausgabe **AN** — Quantum spricht jetzt mit **VoxCPM-Stimme**. Hinweis: Über den kostenlosen Demo-Server kann die erste Antwort einige Sekunden bis 1–2 Minuten dauern (Kaltstart); mit eigenem VoxCPM-Server geht es flott. Klang ändern: `/skill voice stimme <Beschreibung>`. Nochmal `/skill voice` schaltet ab.'
+        ? '🎙 Sprachausgabe **AN** — Quantum spricht mit **VoxCPM-Stimme**. Diktierst du eine Frage über das 🎤, sende ich sie direkt ab und höre nach der Antwort wieder zu (Freisprech-Loop wie ein Support-Bot). Hinweis: Über den kostenlosen Demo-Server kann die erste Antwort einige Sekunden bis 1–2 Minuten dauern (Kaltstart). Klang ändern: `/skill voice stimme <Beschreibung>`. Nochmal `/skill voice` schaltet ab.'
         : '🎙 Sprachausgabe **AUS**.';
     },
   });
@@ -219,17 +229,31 @@ window.Quantum = window.Quantum || {};
     rec.lang = 'de-DE';
     rec.interimResults = false;
     let listening = false;
+    /* Manuell gesendete Nachrichten beenden den Freisprech-Loop;
+       Diktat-Eingaben (unten) aktivieren ihn direkt danach wieder. */
+    const form = document.getElementById('chat-form');
+    if (form) form.addEventListener('submit', () => { handsFree = false; });
     rec.onresult = (e) => {
       const field = document.getElementById('chat-input-field');
       field.value = e.results[0][0].transcript;
       field.focus();
+      /* Voice-Modus an: diktierte Frage direkt absenden (Support-Bot-Loop) */
+      if (voiceOn && form && field.value.trim()) {
+        if (typeof form.requestSubmit === 'function') form.requestSubmit();
+        else form.dispatchEvent(new Event('submit', { cancelable: true }));
+        handsFree = true;
+      }
     };
     rec.onend = () => { listening = false; btn.classList.remove('is-listening'); };
-    btn.addEventListener('click', () => {
-      if (listening) { rec.stop(); return; }
+    startListening = () => {
+      if (listening) return;
       listening = true;
       btn.classList.add('is-listening');
-      rec.start();
+      try { rec.start(); } catch (_) { listening = false; btn.classList.remove('is-listening'); }
+    };
+    btn.addEventListener('click', () => {
+      if (listening) { handsFree = false; rec.stop(); return; }
+      startListening();
     });
   });
 })();

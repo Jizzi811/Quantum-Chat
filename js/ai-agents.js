@@ -64,4 +64,42 @@ window.Quantum = window.Quantum || {};
       return '💻 **AI CODING-AGENT** · `' + result.model + '`\n\n' + result.text;
     },
   });
+
+  /* AutoGen-Stil-Team (Port des autogen_starter aus awesome-ai-apps):
+     drei Agenten-Rollen arbeiten die Aufgabe nacheinander über das
+     zentrale KI-Gateway ab — Planner zerlegt, Worker löst, Critic
+     prüft und liefert die finale Fassung. */
+  window.Quantum.skills.register({
+    id: 'team', icon: '🤝', name: 'AutoGen Agent-Team',
+    desc: 'Planner, Worker und Critic lösen Aufgaben gemeinsam',
+    usage: '/skill team Businessplan für ein Neon-Café',
+    async run(input) {
+      const task = input.trim();
+      if (!task) return 'Welche Aufgabe soll das Agent-Team lösen? `/skill team <Aufgabe>`';
+      const plan = await askPreferStream({
+        system: 'You are the PLANNER of a multi-agent team. Break the task into 3-5 concrete numbered steps. Answer in German, at most 120 words, do not solve the task yet.',
+        prompt: task,
+        temperature: 0.3,
+      }, { stream: 1200, direct: 800 });
+      const work = await askPreferStream({
+        system: 'You are the WORKER of a multi-agent team. Follow the given plan step by step and deliver the complete, concrete result in German.',
+        prompt: 'Aufgabe: ' + task + '\n\nPlan des Planners:\n' + plan.text,
+        temperature: 0.4,
+      }, { stream: 9000, direct: 2500 });
+      const review = await askPreferStream({
+        system: 'You are the CRITIC of a multi-agent team. Check the result for gaps and errors, then output only the final improved version in German — no meta commentary.',
+        prompt: 'Aufgabe: ' + task + '\n\nErgebnis des Workers:\n' + work.text,
+        temperature: 0.2,
+      }, { stream: 9000, direct: 2500 });
+      return [
+        '🤝 **AUTOGEN AGENT-TEAM** · `' + (review.model || work.model || 'KI-Modell') + '`',
+        '',
+        '**🧭 Planner:**',
+        plan.text.trim(),
+        '',
+        '**🛠 Worker → 🔎 Critic (finale Fassung):**',
+        review.text.trim(),
+      ].join('\n');
+    },
+  });
 })();

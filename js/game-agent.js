@@ -14,7 +14,7 @@ window.Quantum = window.Quantum || {};
 
   /* Anzeigename des Providers, den das Gateway in result.provider bzw.
      error.provider mitliefert. Unbekannt/leer → neutrales "KI-Modell". */
-  const PROVIDER_LABELS = { gemini: 'Gemini', groq: 'Groq', nvidia: 'NVIDIA/Qwen', openrouter: 'OpenRouter', custom: 'Custom-Gateway' };
+  const PROVIDER_LABELS = { nebius: 'Nebius', gemini: 'Gemini', groq: 'Groq', nvidia: 'NVIDIA/Qwen', openrouter: 'OpenRouter', custom: 'Custom-Gateway' };
   function providerLabel(id) {
     return PROVIDER_LABELS[String(id || '').toLowerCase()] || 'KI-Modell';
   }

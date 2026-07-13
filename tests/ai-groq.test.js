@@ -11,6 +11,8 @@ delete process.env.GROQ_MODEL;
 delete process.env.NVIDIA_MODEL;
 delete process.env.GEMINI_API_KEY;
 delete process.env.GEMINI_MODEL;
+delete process.env.NEBIUS_API_KEY;
+delete process.env.NEBIUS_MODEL;
 delete process.env.CUSTOM_AI_URL;
 delete process.env.CUSTOM_AI_MODEL;
 
@@ -95,6 +97,29 @@ test('GROQ_MODEL wird respektiert; totes Modell (404) fällt auf den Groq-Defaul
   } finally {
     console.error = originalError;
     delete process.env.GROQ_MODEL;
+  }
+});
+
+test('NEBIUS_API_KEY hat Vorrang vor Gemini/Groq: Anfrage geht an die Token Factory', async () => {
+  process.env.NEBIUS_API_KEY = 'test-nebius-key-000';
+  process.env.GEMINI_API_KEY = 'test-gemini-key-789';
+  try {
+    let sentUrl = null;
+    let sentAuth = null;
+    global.fetch = async (url, options) => {
+      sentUrl = String(url);
+      sentAuth = options.headers.Authorization;
+      return okJson({ model: 'meta-llama/Llama-3.3-70B-Instruct', choices: [{ message: { content: 'ok' } }] });
+    };
+    const result = await handler(makeEvent());
+    assert.equal(result.statusCode, 200);
+    const payload = JSON.parse(result.body);
+    assert.equal(payload.provider, 'nebius');
+    assert.equal(sentUrl, 'https://api.studio.nebius.com/v1/chat/completions');
+    assert.equal(sentAuth, 'Bearer test-nebius-key-000');
+  } finally {
+    delete process.env.NEBIUS_API_KEY;
+    delete process.env.GEMINI_API_KEY;
   }
 });
 
