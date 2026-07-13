@@ -100,9 +100,15 @@
 
   <header class="q-header" data-testid="quantum-header">
     <div class="q-logo">
-      <img class="q-logo__bot" src="assets/robot.png" alt="Quantum Roboter-Maskottchen"
-           onerror="this.hidden=true; this.nextElementSibling.hidden=false;" />
-      <span class="q-logo__atom" hidden aria-hidden="true">⚛</span>
+      <div class="q-core" data-testid="quantum-core" role="img" aria-label="Quantum Core">
+        <span class="q-core__aura" aria-hidden="true"></span>
+        <span class="q-core__ring q-core__ring--1" aria-hidden="true"></span>
+        <span class="q-core__ring q-core__ring--2" aria-hidden="true"></span>
+        <span class="q-core__sphere" aria-hidden="true">
+          <span class="q-core__streams"></span>
+          <span class="q-core__glass"></span>
+        </span>
+      </div>
       <h1 class="q-logo__text" data-text="QUANTUM">QUANTUM</h1>
       <span class="q-logo__tag">DEIN AI WORKER</span>
     </div>
