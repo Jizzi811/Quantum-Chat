@@ -104,7 +104,7 @@ window.Quantum = window.Quantum || {};
      KI-Modell alle freien Fragen (Befehle und Skill-Sessions bleiben
      lokal). Ohne Zugang bleibt Quantum im lokalen Demo-Modus. */
 
-  const PROVIDER_LABELS = { gemini: 'Gemini', groq: 'Groq', nvidia: 'NVIDIA/Qwen', openrouter: 'OpenRouter', custom: 'Custom-Gateway' };
+  const PROVIDER_LABELS = { nebius: 'Nebius', gemini: 'Gemini', groq: 'Groq', nvidia: 'NVIDIA/Qwen', openrouter: 'OpenRouter', custom: 'Custom-Gateway' };
   function providerLabel(id) {
     return PROVIDER_LABELS[String(id || '').toLowerCase()] || 'KI-Modell';
   }

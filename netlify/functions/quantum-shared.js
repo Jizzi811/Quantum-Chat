@@ -3,11 +3,20 @@
 /* Unterstützte Provider in Prioritätsreihenfolge: der erste, dessen
    API-Key gesetzt ist, gewinnt. Alle sprechen die OpenAI-kompatible
    Chat-Completions-API — nur Basis-URL, Key und Modell unterscheiden sich.
+   - nebius:     Nebius Token Factory (studio.nebius.com), günstig pro Token
    - gemini:     kostenloser Free-Tier (aistudio.google.com/apikey)
    - groq:       kostenloser Free-Tier (console.groq.com/keys), sehr schnell
    - nvidia:     NVIDIA Build (integrate.api.nvidia.com)
    - openrouter: Sammel-Gateway mit freien Modellen */
 const PROVIDERS = [
+  {
+    name: 'nebius',
+    url: 'https://api.studio.nebius.com/v1/chat/completions',
+    modelsUrl: 'https://api.studio.nebius.com/v1/models',
+    defaultModel: 'meta-llama/Llama-3.3-70B-Instruct',
+    keyEnv: 'NEBIUS_API_KEY',
+    modelEnv: 'NEBIUS_MODEL',
+  },
   {
     name: 'gemini',
     url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
