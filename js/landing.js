@@ -22,6 +22,8 @@ window.Quantum = window.Quantum || {};
   ];
   const light = document.getElementById('aurora-light');
   const bloom = document.getElementById('aurora-bloom');
+  const heroStage = document.getElementById('hero-core-stage');
+  const heroCore = document.getElementById('hero-core');
 
   const coarse = window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 720;
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -120,6 +122,16 @@ window.Quantum = window.Quantum || {};
       bloom.style.opacity = bloomEnergy.toFixed(3);
       bloom.style.transform = 'translate3d(' + spring.x + 'px,' + spring.y + 'px,0) translate(-50%,-50%) scale(' + (0.9 + bloomEnergy * 0.25).toFixed(3) + ')';
     }
+
+    /* Hero-Core: neigt sich weich zum Cursor und sammelt bei Bewegung
+       Licht (leichtes Aufskalieren); die Wellenstärke folgt der Energie. */
+    if (heroStage && !coarse) {
+      const maxTilt = 15;
+      const scale = 1 + bloomEnergy * 0.04;
+      heroStage.style.transform =
+        'rotateX(' + (ny * maxTilt).toFixed(2) + 'deg) rotateY(' + (-nx * maxTilt).toFixed(2) + 'deg) scale(' + scale.toFixed(3) + ')';
+    }
+    if (heroCore) heroCore.style.setProperty('--wave-strength', (0.18 + bloomEnergy * 0.6).toFixed(3));
 
     rafId = requestAnimationFrame(frame);
   }
