@@ -25,13 +25,23 @@ Site → **Settings → Environment variables**:
 Im Stripe-Dashboard unter **Settings → Payment methods** die **SEPA-Lastschrift**
 aktivieren. Karte ist standardmäßig aktiv.
 
-## 4. Testen
+## 4. Automatische Freischaltung nach Zahlung
+Nach erfolgreicher Zahlung kehrt der Nutzer mit der Stripe-`session_id` zurück. Die Function
+`netlify/functions/checkout-verify.js` fragt die Session bei Stripe ab und gibt — **nur wenn sie
+nachweislich bezahlt/abgeschlossen ist** — den Zugangscode (`QUANTUM_ACCESS_TOKEN`) zurück.
+Der Client schaltet damit automatisch frei. Kein Webhook, keine Datenbank, keine E-Mail nötig.
+
+> Voraussetzung: `QUANTUM_ACCESS_TOKEN` (derselbe wie beim Chat) und `STRIPE_SECRET_KEY` sind gesetzt.
+> Modell-Grenze: Es gibt aktuell **einen gemeinsamen Zugangscode** für alle Abonnenten (die App
+> kennt keine Einzelkonten). Der Code wird nur nach einer verifizierten, bezahlten Session herausgegeben.
+
+## 5. Testen
 Mit `sk_test_…` und Stripes [Testkarten](https://stripe.com/docs/testing) (z. B. `4242 4242 4242 4242`).
-Nach erfolgreicher Zahlung landet der Nutzer wieder auf der Startseite (`?checkout=success`).
+Nach erfolgreicher Zahlung landet der Nutzer wieder auf der Startseite (`?checkout=success&session_id=…`)
+und wird automatisch freigeschaltet.
 
 ## Offen / nächster Schritt
-- **Zugang freischalten:** Aktuell zeigt die Erfolgsseite den Hinweis, dass der Zugangscode
-  per E-Mail kommt. Das automatische Ausstellen/Verwalten des Codes nach erfolgreicher Zahlung
-  (Stripe-Webhook → Zugangscode) ist ein sinnvoller Folgeschritt.
+- **Einzelkonten:** Für pro Nutzer eigene Codes + Kündigungs-/Statusprüfung bräuchte es Nutzerkonten
+  (z. B. Stripe-Webhook + Speicher/DB + E-Mail). Bewusst nicht enthalten.
 - **Recht:** Impressum, Datenschutz, AGB und Widerruf unter `legal/` sind Platzhalter und
   müssen vor dem Livegang ausgefüllt werden (siehe Hinweise dort).

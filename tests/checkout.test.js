@@ -45,3 +45,15 @@ test('resolveReturnUrls bevorzugt QUANTUM_ALLOWED_ORIGIN vor der Request-Origin'
   assert.equal(urls.success, 'https://fixed.example/?checkout=success');
   delete process.env.QUANTUM_ALLOWED_ORIGIN;
 });
+
+test('appendSessionPlaceholder hängt Stripes Session-Marker an', () => {
+  assert.equal(checkout.appendSessionPlaceholder('https://x/?checkout=success'),
+    'https://x/?checkout=success&session_id={CHECKOUT_SESSION_ID}');
+  assert.equal(checkout.appendSessionPlaceholder('https://x/'),
+    'https://x/?session_id={CHECKOUT_SESSION_ID}');
+});
+
+test('appendSessionPlaceholder verdoppelt einen vorhandenen Marker nicht', () => {
+  const url = 'https://x/?session_id={CHECKOUT_SESSION_ID}';
+  assert.equal(checkout.appendSessionPlaceholder(url), url);
+});

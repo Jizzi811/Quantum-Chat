@@ -45,6 +45,13 @@ function resolveReturnUrls(origin) {
   return { success, cancel };
 }
 
+/* Hängt Stripes Session-Platzhalter an die Erfolgs-URL, damit der Client die
+   Zahlung nach dem Rücksprung verifizieren kann. Stripe ersetzt den Marker. */
+function appendSessionPlaceholder(url) {
+  if (/\{CHECKOUT_SESSION_ID\}/.test(url)) return url;
+  return url + (url.includes('?') ? '&' : '?') + 'session_id={CHECKOUT_SESSION_ID}';
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') return response(405, { error: 'Method not allowed' });
 
@@ -65,7 +72,7 @@ exports.handler = async (event) => {
   const methods = (envValue('STRIPE_PAYMENT_METHODS') || 'card,sepa_debit')
     .split(',').map((m) => m.trim().toLowerCase()).filter(Boolean);
   const { success, cancel } = resolveReturnUrls(origin);
-  const form = buildCheckoutForm({ priceId, successUrl: success, cancelUrl: cancel, methods });
+  const form = buildCheckoutForm({ priceId, successUrl: appendSessionPlaceholder(success), cancelUrl: cancel, methods });
 
   try {
     const upstream = await fetch(STRIPE_API, {
@@ -110,3 +117,4 @@ function response(statusCode, body) {
 
 module.exports.buildCheckoutForm = buildCheckoutForm;
 module.exports.resolveReturnUrls = resolveReturnUrls;
+module.exports.appendSessionPlaceholder = appendSessionPlaceholder;
