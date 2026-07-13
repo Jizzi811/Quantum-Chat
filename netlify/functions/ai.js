@@ -1,6 +1,7 @@
 const { contentToText } = require('../../js/model-response.js');
 const {
   resolveProvider,
+  fallbackModels,
   envValue,
   safeEqual,
   makeRateLimiter,
@@ -55,18 +56,22 @@ exports.handler = async (event) => {
   try {
     let attempt = await callUpstream({ config, model, system, prompt, body, event });
 
-    /* Konfiguriertes Modell existiert nicht mehr (404) oder ist End-of-Life
-       (410): einmal automatisch mit dem Default-Modell erneut versuchen und
-       sich den funktionierenden Tausch für diese Lambda-Instanz merken. */
-    if (modelGone(attempt) && model !== config.defaultModel) {
-      logUpstreamIssue({
-        status: attempt.upstream.status, model, provider, contentType: attempt.contentType, raw: attempt.raw,
-        message: `Modell nicht mehr verfügbar – automatischer Retry mit ${config.defaultModel}`,
-      });
-      const retry = await callUpstream({ config, model: config.defaultModel, system, prompt, body, event });
-      if (retry.upstream.ok) modelSwap = { failed: model, works: config.defaultModel };
-      attempt = retry;
-      model = config.defaultModel;
+    /* Konfiguriertes Modell wird nicht angenommen (404/410): automatisch
+       Alternativen probieren (bei Gemini die andere Namensform, sonst das
+       Default-Modell) und sich den funktionierenden Tausch für diese
+       Lambda-Instanz merken. */
+    if (modelGone(attempt)) {
+      const requestedModel = model;
+      for (const fallbackModel of fallbackModels(config, requestedModel)) {
+        logUpstreamIssue({
+          status: attempt.upstream.status, model, provider, contentType: attempt.contentType, raw: attempt.raw,
+          message: `Modell nicht verfügbar – automatischer Retry mit ${fallbackModel}`,
+        });
+        attempt = await callUpstream({ config, model: fallbackModel, system, prompt, body, event });
+        model = fallbackModel;
+        if (attempt.upstream.ok) modelSwap = { failed: requestedModel, works: fallbackModel };
+        if (!modelGone(attempt)) break;
+      }
     }
 
     const { upstream, contentType, raw, data, parseError } = attempt;

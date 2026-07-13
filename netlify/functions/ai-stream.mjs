@@ -6,6 +6,7 @@
    Auth, Rate-Limit und Modell-Fallback identisch zu ai.js. */
 import {
   resolveProvider,
+  fallbackModels,
   envValue,
   safeEqual,
   makeRateLimiter,
@@ -53,14 +54,18 @@ export default async function handler(req) {
   try {
     let upstream = await callUpstream({ config, model, system, prompt, body, req });
 
-    /* Konfiguriertes Modell existiert nicht mehr (404/410): Retry mit Default. */
-    if (!upstream.ok && (upstream.status === 404 || upstream.status === 410)
-        && model !== config.defaultModel) {
-      console.error('[quantum-ai-stream] Modell nicht verfügbar, Retry mit Default', {
-        httpStatus: upstream.status, provider, model, fallback: config.defaultModel,
-      });
-      model = config.defaultModel;
-      upstream = await callUpstream({ config, model, system, prompt, body, req });
+    /* Konfiguriertes Modell wird nicht angenommen (404/410): automatisch
+       Alternativen probieren — bei Gemini die andere Namensform
+       ("gemini-…" ↔ "models/gemini-…"), sonst das Default-Modell. */
+    if (!upstream.ok && (upstream.status === 404 || upstream.status === 410)) {
+      for (const fallbackModel of fallbackModels(config, model)) {
+        console.error('[quantum-ai-stream] Modell nicht verfügbar, Retry', {
+          httpStatus: upstream.status, provider, model, fallback: fallbackModel,
+        });
+        model = fallbackModel;
+        upstream = await callUpstream({ config, model, system, prompt, body, req });
+        if (upstream.ok || (upstream.status !== 404 && upstream.status !== 410)) break;
+      }
     }
 
     if (!upstream.ok) {
