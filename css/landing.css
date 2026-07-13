@@ -98,6 +98,75 @@
   100% { transform: translate3d(0, 0, 0); }
 }
 
+/* ── Hero Quantum-Core ────────────────────────────────────────────
+   Der grosse Core schwebt im Hero der Startseite. Er neigt sich zum
+   Cursor (3D-Tilt via JS), sammelt Licht und sendet feine Wellen aus.
+   Nutzt die .q-core-Bausteine aus quantum.css, nur groesser skaliert.
+   ──────────────────────────────────────────────────────────────── */
+
+.hero-core {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: clamp(160px, 30vw, 240px);
+  margin: 0.2rem auto 0.1rem;
+  perspective: 720px;
+  pointer-events: none;
+}
+
+.hero-core__stage {
+  transform-style: preserve-3d;
+  transition: transform 0.35s ease-out;
+  will-change: transform;
+}
+
+.q-core--hero {
+  width: clamp(130px, 22vw, 190px);
+  height: clamp(130px, 22vw, 190px);
+  --core-stream-blur: 3px;
+}
+
+/* Feine Wellen, die vom Core in den Hintergrund laufen. Ihre Staerke
+   (--wave-strength) wird per JS aus der Cursor-Energie gesteuert. */
+.hero-core__wave {
+  position: absolute;
+  width: clamp(130px, 22vw, 190px);
+  height: clamp(130px, 22vw, 190px);
+  border-radius: 50%;
+  border: 1px solid rgba(0, 245, 255, 0.4);
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: hero-wave 3.8s ease-out infinite;
+  pointer-events: none;
+}
+
+.hero-core__wave--2 {
+  animation-delay: 1.9s;
+  border-color: rgba(255, 45, 247, 0.34);
+}
+
+@keyframes hero-wave {
+  0%   { transform: scale(0.72); opacity: 0; }
+  16%  { opacity: calc(var(--wave-strength, 0.35) * 0.9); }
+  100% { transform: scale(2.3); opacity: 0; }
+}
+
+/* Beim Start "oeffnet" sich der Core und zieht den Blick in den Workspace. */
+.landing--closing .hero-core__stage {
+  transform: scale(1.9) translateZ(80px) !important;
+  transition: transform 0.62s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.landing--closing .hero-core__wave { animation: none; opacity: 0; }
+
+@media (max-width: 720px), (pointer: coarse) {
+  .hero-core { height: clamp(140px, 40vw, 200px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-core__wave { animation: none; }
+  .hero-core__stage { transition: none; }
+}
+
 /* ── Glassmorphism-Karte ──────────────────────────────────────── */
 
 .landing__card {
