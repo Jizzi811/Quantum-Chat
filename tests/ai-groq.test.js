@@ -267,6 +267,47 @@ test('CUSTOM_AI_URL hat höchste Priorität (OpenAI-kompatibles Gateway, Key opt
   }
 });
 
+test('OpenAI-Modelle: max_tokens-400 wird automatisch mit max_completion_tokens wiederholt', async () => {
+  process.env.CUSTOM_AI_URL = 'https://api.openai.com/v1';
+  process.env.CUSTOM_AI_KEY = 'sk-test';
+  process.env.CUSTOM_AI_MODEL = 'gpt-5.4-mini';
+  const bodies = [];
+  global.fetch = async (url, options) => {
+    const body = JSON.parse(options.body);
+    bodies.push(body);
+    if ('max_tokens' in body) {
+      return {
+        ok: false, status: 400,
+        headers: { get: () => 'application/json' },
+        text: async () => JSON.stringify({ error: {
+          message: "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.",
+        } }),
+      };
+    }
+    return okJson({ model: body.model, choices: [{ message: { content: 'ok' } }] });
+  };
+  try {
+    const result = await handler(makeEvent());
+    assert.equal(result.statusCode, 200);
+    assert.equal(bodies.length, 2, 'genau ein Retry');
+    assert.ok('max_tokens' in bodies[0]);
+    assert.ok('max_completion_tokens' in bodies[1]);
+    assert.ok(!('max_tokens' in bodies[1]), 'Retry sendet max_tokens nicht mehr mit');
+
+    /* Präferenz wird pro Instanz gemerkt: die nächste Anfrage geht ohne
+       Umweg direkt mit max_completion_tokens raus. */
+    bodies.length = 0;
+    const second = await handler(makeEvent());
+    assert.equal(second.statusCode, 200);
+    assert.equal(bodies.length, 1, 'kein zweiter Versuch mehr nötig');
+    assert.ok('max_completion_tokens' in bodies[0]);
+  } finally {
+    delete process.env.CUSTOM_AI_URL;
+    delete process.env.CUSTOM_AI_KEY;
+    delete process.env.CUSTOM_AI_MODEL;
+  }
+});
+
 test('ohne jeden Key meldet das Gateway 503 statt zu raten', async () => {
   const savedGroq = process.env.GROQ_API_KEY;
   const savedNvidia = process.env.NVIDIA_API_KEY;

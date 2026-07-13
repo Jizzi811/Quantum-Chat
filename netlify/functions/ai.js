@@ -18,6 +18,10 @@ const withinRateLimit = makeRateLimiter();
    damit ein totes konfiguriertes Modell nicht jede Anfrage doppelt kostet. */
 let modelSwap = null;
 
+/* Neuere OpenAI-Modelle lehnen max_tokens ab und verlangen
+   max_completion_tokens — pro Provider gemerkt, sobald der 400er kommt. */
+const tokenParamPreference = {};
+
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return response(405, { error: 'Method not allowed' });
@@ -56,7 +60,7 @@ exports.handler = async (event) => {
   if (modelSwap && modelSwap.failed === model) model = modelSwap.works;
 
   try {
-    let attempt = await callUpstream({ config, model, system, prompt, body, event });
+    let attempt = await callUpstreamAdaptive({ config, model, system, prompt, body, event });
 
     /* Konfiguriertes Modell wird nicht angenommen (404/410): automatisch
        Alternativen probieren (bei Gemini die andere Namensform, sonst das
@@ -76,7 +80,7 @@ exports.handler = async (event) => {
           status: attempt.upstream.status, model, provider, contentType: attempt.contentType, raw: attempt.raw,
           message: `Modell nicht verfügbar – automatischer Retry mit ${fallbackModel}`,
         });
-        attempt = await callUpstream({ config, model: fallbackModel, system, prompt, body, event });
+        attempt = await callUpstreamAdaptive({ config, model: fallbackModel, system, prompt, body, event });
         model = fallbackModel;
         if (attempt.upstream.ok) modelSwap = { failed: requestedModel, works: fallbackModel };
         if (!modelGone(attempt)) break;
@@ -140,10 +144,24 @@ exports.handler = async (event) => {
   }
 };
 
+/* Aufruf mit automatischem Parameter-Tausch: lehnt der Provider max_tokens
+   mit HTTP 400 ab (neuere OpenAI-Modelle), wird einmal mit
+   max_completion_tokens wiederholt und die Präferenz gemerkt. */
+async function callUpstreamAdaptive(args) {
+  const tokenParam = tokenParamPreference[args.config.name] || 'max_tokens';
+  let attempt = await callUpstream({ ...args, tokenParam });
+  if (tokenParam === 'max_tokens' && attempt.upstream.status === 400
+      && /max_completion_tokens/.test(attempt.raw || '')) {
+    tokenParamPreference[args.config.name] = 'max_completion_tokens';
+    attempt = await callUpstream({ ...args, tokenParam: 'max_completion_tokens' });
+  }
+  return attempt;
+}
+
 /* Führt einen Chat-Completions-Aufruf aus und liest die Antwort abgesichert
    als Text + optional geparstes JSON. NVIDIA/Qwen braucht hohe Temperatur
    samt top_p, alle anderen Provider bekommen die gewünschte Temperatur. */
-async function callUpstream({ config, model, system, prompt, body, event }) {
+async function callUpstream({ config, model, system, prompt, body, event, tokenParam = 'max_tokens' }) {
   const upstream = await fetch(config.url, {
     method: 'POST',
     signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
@@ -163,7 +181,7 @@ async function callUpstream({ config, model, system, prompt, body, event }) {
       ],
       temperature: config.name === 'nvidia' ? 1.0 : (Number.isFinite(Number(body.temperature)) ? Number(body.temperature) : 0.35),
       ...(config.name === 'nvidia' ? { top_p: 0.95 } : {}),
-      max_tokens: Math.min(Math.max(Number(body.maxTokens) || 7000, 256), 16000),
+      [tokenParam]: Math.min(Math.max(Number(body.maxTokens) || 7000, 256), 16000),
     }),
   });
   const contentType = upstream.headers.get('content-type') || 'unbekannt';
