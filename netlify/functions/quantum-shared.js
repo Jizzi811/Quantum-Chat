@@ -143,6 +143,34 @@ function safeEqual(a, b) {
   return difference === 0;
 }
 
+/* Alle gültigen Zugangscodes: der primäre QUANTUM_ACCESS_TOKEN plus die
+   selbst verwaltete Liste QUANTUM_ACCESS_TOKENS (durch Komma, Semikolon oder
+   Zeilenumbruch getrennt). So kannst du jederzeit neue Codes vergeben,
+   entziehen oder rotieren, ohne Code-Änderung. Deduped, ohne Leereinträge. */
+function accessTokenList() {
+  const tokens = [];
+  const primary = envValue('QUANTUM_ACCESS_TOKEN');
+  if (primary) tokens.push(primary);
+  /* Wie envValue einen versehentlich mitkopierten Variablennamen entfernen. */
+  let rawList = String(process.env.QUANTUM_ACCESS_TOKENS || '').trim();
+  if (rawList.toUpperCase().startsWith('QUANTUM_ACCESS_TOKENS=')) {
+    rawList = rawList.slice('QUANTUM_ACCESS_TOKENS='.length);
+  }
+  rawList
+    .split(/[,;\n]/)
+    .map((token) => token.trim().replace(/^["']+|["']+$/g, '').trim())
+    .filter(Boolean)
+    .forEach((token) => { if (!tokens.includes(token)) tokens.push(token); });
+  return tokens;
+}
+
+/* Konstantzeit-Vergleich gegen jeden gültigen Code. */
+function isValidAccessToken(provided) {
+  const value = String(provided || '');
+  if (!value) return false;
+  return accessTokenList().some((token) => safeEqual(value, token));
+}
+
 /* Einfaches In-Memory-Rate-Limit pro Lambda-Instanz. */
 function makeRateLimiter(limit = 10, windowMs = 60000) {
   const requests = new Map();
@@ -164,5 +192,7 @@ module.exports = {
   pickGeminiModel,
   envValue,
   safeEqual,
+  accessTokenList,
+  isValidAccessToken,
   makeRateLimiter,
 };
