@@ -110,14 +110,21 @@ window.Quantum = window.Quantum || {};
            klassischen Aufruf mit kompakterem Budget zurück. */
         const ai = window.Quantum.ai;
         const request = {
-          system: 'You are a browser game studio. Return only one complete standalone HTML document with embedded CSS and JavaScript, under 250 lines, compact code. It must be immediately playable and responsive, with instructions, controls, objective, score, win/loss and a start or restart button. No explanation, markdown fences, external assets, libraries, network calls, browser storage, navigation, iframe, object or embed. Do not think out loud or plan in prose — start writing the HTML document immediately. /no_think',
-          prompt: 'Create this compact browser game: ' + prompt,
+          system: 'You are an award-winning browser game studio. Return only one complete standalone HTML document with embedded CSS and JavaScript.'
+            + ' The game must be immediately playable and feel polished, with a neon-cyberpunk look: dark background (#0a0a18), glowing accents'
+            + ' (cyan #26f7ff, magenta #ff3b81), CSS glow/box-shadow effects, a centered responsive layout and clean typography.'
+            + ' Render the game on a large <canvas> (fills most of the viewport) with smooth requestAnimationFrame animation and juicy feedback:'
+            + ' particles, flashes or shake on scoring and losing. Include a title, short instructions, a live score display,'
+            + ' gradually increasing difficulty, a clear win/loss state and a start/restart button. Support both keyboard and touch controls.'
+            + ' All visible text must be German. No explanation, no markdown fences, no external assets, fonts, libraries, network calls,'
+            + ' browser storage, navigation, iframe, object or embed. Do not think out loud or plan in prose — start with <!doctype html> immediately.',
+          prompt: 'Create this browser game: ' + prompt,
           temperature: 0.45,
         };
         let result;
         if (ai.askStream) {
           try {
-            result = await ai.askStream({ ...request, maxTokens: 7500 });
+            result = await ai.askStream({ ...request, maxTokens: 11000 });
           } catch (_) {
             result = await ai.ask({ ...request, maxTokens: 2200 });
           }
