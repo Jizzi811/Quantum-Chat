@@ -3,6 +3,7 @@ window.Quantum = window.Quantum || {};
 (function () {
   'use strict';
   const endpoint = '/.netlify/functions/ai';
+  const streamEndpoint = '/.netlify/functions/ai-stream';
 
   function accessToken() {
     let token = sessionStorage.getItem('quantum.ai.access');
@@ -42,6 +43,55 @@ window.Quantum = window.Quantum || {};
     return request({ system, prompt, temperature, maxTokens });
   }
 
+  /* Streaming-Variante über /ai-stream: liest Server-Sent-Events und setzt
+     die Antwort zusammen. Umgeht Netlifys 10-Sekunden-Limit für lange
+     Generierungen. onDelta (optional) bekommt den bisherigen Gesamttext. */
+  async function askStream({ system, prompt, temperature, maxTokens, onDelta } = {}) {
+    const res = await fetch(streamEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + accessToken() },
+      body: JSON.stringify({ system, prompt, temperature, maxTokens }),
+    });
+    if (!res.ok || !res.body) {
+      let data = {};
+      try { data = await res.json(); } catch (_) { /* kein JSON-Body */ }
+      const error = new Error(data.error || ('Quantum AI Stream Fehler (HTTP ' + res.status + ').'));
+      if (data.model) error.model = data.model;
+      if (data.provider) error.provider = data.provider;
+      throw error;
+    }
+    let model = res.headers.get('x-quantum-model') || '';
+    const provider = res.headers.get('x-quantum-provider') || 'nvidia';
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let text = '';
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let newline;
+      while ((newline = buffer.indexOf('\n')) >= 0) {
+        const line = buffer.slice(0, newline).trim();
+        buffer = buffer.slice(newline + 1);
+        if (!line.startsWith('data:')) continue;
+        const payload = line.slice(5).trim();
+        if (!payload || payload === '[DONE]') continue;
+        try {
+          const chunk = JSON.parse(payload);
+          model = chunk.model || model;
+          const delta = chunk.choices?.[0]?.delta?.content || '';
+          if (delta) {
+            text += delta;
+            if (onDelta) onDelta(text);
+          }
+        } catch (_) { /* unvollständige/fremde Zeile überspringen */ }
+      }
+    }
+    if (!text.trim()) throw new Error('Der Stream lieferte keinen Inhalt.');
+    return { text, model, provider };
+  }
+
   function hasAccess() {
     try { return !!sessionStorage.getItem('quantum.ai.access'); } catch (_) { return false; }
   }
@@ -53,5 +103,5 @@ window.Quantum = window.Quantum || {};
     } catch (_) { /* privater Modus */ }
   }
 
-  window.Quantum.ai = { ask, endpoint, hasAccess, setAccess };
+  window.Quantum.ai = { ask, askStream, endpoint, streamEndpoint, hasAccess, setAccess };
 })();

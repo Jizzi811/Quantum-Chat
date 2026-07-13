@@ -1,13 +1,18 @@
 const { contentToText } = require('../../js/model-response.js');
+const {
+  OPENROUTER_URL,
+  NVIDIA_URL,
+  NVIDIA_MODELS_URL,
+  NVIDIA_DEFAULT_MODEL,
+  envValue,
+  safeEqual,
+  makeRateLimiter,
+} = require('./quantum-shared.js');
 
-const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const NVIDIA_URL = 'https://integrate.api.nvidia.com/v1/chat/completions';
-const NVIDIA_MODELS_URL = 'https://integrate.api.nvidia.com/v1/models';
-const NVIDIA_DEFAULT_MODEL = 'qwen/qwen3.5-122b-a10b';
 /* Netlify bricht synchrone Functions nach 10 s hart ab (nackter 504 ohne
    JSON). Wir brechen früher selbst ab und liefern eine erklärende Antwort. */
 const UPSTREAM_TIMEOUT_MS = 8500;
-const requests = new Map();
+const withinRateLimit = makeRateLimiter();
 
 /* Merkt sich pro Lambda-Instanz einen funktionierenden Modell-Tausch,
    damit ein totes konfiguriertes Modell nicht jede Anfrage doppelt kostet. */
@@ -188,18 +193,6 @@ async function suggestModels(apiKey, wanted) {
   }
 }
 
-/* Liest eine Umgebungsvariable und bereinigt typische Paste-Fehler aus dem
-   Netlify-UI: der Variablenname landet mit im Wert ("NVIDIA_MODEL=qwen/…"),
-   umschließende Anführungszeichen oder Leerzeichen. */
-function envValue(name) {
-  let value = String(process.env[name] || '').trim();
-  if (value.toUpperCase().startsWith(name.toUpperCase() + '=')) {
-    value = value.slice(name.length + 1).trim();
-  }
-  value = value.replace(/^["']+|["']+$/g, '').trim();
-  return value;
-}
-
 // content kann String, Array von Parts oder bereits geparstes Objekt sein.
 // Objekte werden serialisiert statt sie später erneut durch JSON.parse zu jagen.
 function normalizeContent(content) {
@@ -233,18 +226,3 @@ function response(statusCode, body) {
   };
 }
 
-function safeEqual(a, b) {
-  if (!a || a.length !== b.length) return false;
-  let difference = 0;
-  for (let i = 0; i < a.length; i += 1) difference |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return difference === 0;
-}
-
-function withinRateLimit(ip) {
-  const now = Date.now();
-  const recent = (requests.get(ip) || []).filter((time) => now - time < 60000);
-  if (recent.length >= 10) return false;
-  recent.push(now);
-  requests.set(ip, recent);
-  return true;
-}
