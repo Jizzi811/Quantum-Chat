@@ -56,8 +56,18 @@ window.Quantum = window.Quantum || {};
   }
 
   function repair(html) {
-    return html.replace(/<script[^>]+src=[^>]*><\/script>/gi, '')
-      .replace(/<(iframe|object|embed)[\s\S]*?<\/\1>/gi, '');
+    let out = html.replace(/<script[^>]+src=[^>]*><\/script>/gi, '')
+      .replace(/<(iframe|object|embed)[\s\S]*?<\/\1>/gi, '')
+      .trim();
+    /* Am Token-Limit abgeschnittene Dokumente schließen: fehlende
+       </script>/</body>/</html> anhängen und Doctype ergänzen. */
+    const openScripts = (out.match(/<script\b/gi) || []).length;
+    const closedScripts = (out.match(/<\/script>/gi) || []).length;
+    if (openScripts > closedScripts) out += '</script>'.repeat(openScripts - closedScripts);
+    if (/<body\b/i.test(out) && !/<\/body>/i.test(out)) out += '</body>';
+    if (/<html\b/i.test(out) && !/<\/html>/i.test(out)) out += '</html>';
+    if (!/<!doctype html>/i.test(out)) out = '<!doctype html>' + out;
+    return out;
   }
 
   function preview(html, name) {
@@ -100,7 +110,7 @@ window.Quantum = window.Quantum || {};
         let result;
         if (ai.askStream) {
           try {
-            result = await ai.askStream({ ...request, maxTokens: 4000 });
+            result = await ai.askStream({ ...request, maxTokens: 7500 });
           } catch (_) {
             result = await ai.ask({ ...request, maxTokens: 2200 });
           }

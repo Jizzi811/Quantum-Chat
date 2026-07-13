@@ -37,6 +37,16 @@ test('askStream setzt SSE-Deltas zur vollständigen Antwort zusammen', async () 
   assert.equal(deltas[2], '<html><body>x</body></html>');
 });
 
+test('askStream meldet finish_reason "length" (Token-Limit erreicht)', async () => {
+  const body = 'data: {"choices":[{"delta":{"content":"abc"},"finish_reason":null}]}\n\n'
+    + 'data: {"choices":[{"delta":{},"finish_reason":"length"}]}\n\n'
+    + 'data: [DONE]\n\n';
+  global.fetch = async () => new Response(body, { status: 200 });
+  const result = await Quantum.ai.askStream({ prompt: 'test' });
+  assert.equal(result.text, 'abc');
+  assert.equal(result.finishReason, 'length');
+});
+
 test('askStream wirft mit Ursache und Modell bei Fehlerantwort', async () => {
   global.fetch = async () => new Response(
     JSON.stringify({ error: 'nvidia-Anfrage fehlgeschlagen (HTTP 429): rate limited', model: 'qwen/qwen3.5-122b-a10b' }),
