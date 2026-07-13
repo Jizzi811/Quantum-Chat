@@ -91,13 +91,13 @@ window.Quantum = window.Quantum || {};
     return normalizeServer(loadConfig().server) || DEFAULT_SERVER;
   }
 
-  async function generate({ text, instruction, cfg, steps, seed, onStatus }) {
+  async function generate({ text, instruction, cfg, steps, seed, onStatus, timeout }) {
     const config = loadConfig();
     const base = currentServer();
     const status = typeof onStatus === 'function' ? onStatus : () => {};
     const headers = { 'Content-Type': 'application/json' };
     if (config.token) headers.Authorization = 'Bearer ' + config.token;
-    const signal = AbortSignal.timeout(GENERATE_TIMEOUT_MS);
+    const signal = AbortSignal.timeout(clamp(timeout, 1000, GENERATE_TIMEOUT_MS, GENERATE_TIMEOUT_MS));
 
     status('Anfrage an VoxCPM-Server wird gestellt …');
     const started = await fetch(base + '/gradio_api/call/generate', {
