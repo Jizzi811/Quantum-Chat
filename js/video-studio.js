@@ -123,6 +123,9 @@ export const RemotionRoot: React.FC = () => (
     'background:linear-gradient(90deg,#26f7ff,#ff3b81);border:none;border-radius:10px}' +
     '.qs-range{flex:1 1 auto;accent-color:#26f7ff}' +
     '.qs-time{flex:0 0 auto;font-variant-numeric:tabular-nums;font-size:13px;color:#9fb2ff;min-width:118px;text-align:right}' +
+    '.qs-export{background:#12203a;color:#26f7ff;border:1px solid rgba(38,247,255,0.4)}' +
+    '.qs-note{flex:0 0 auto;font-size:12px;color:#26f7ff;min-width:110px}' +
+    '.qs-btn:disabled,.qs-range:disabled{opacity:0.5;cursor:default}' +
     '.qs-err{color:#ff6b6b;padding:20px;font-family:system-ui}';
 
   /* Remotion-Shim + Mini-Player, plain JS via React.createElement (kein Build nötig). */
@@ -231,11 +234,47 @@ export const RemotionRoot: React.FC = () => (
     return h('div', { className:'qs-canvas', style:{ width: CFG.width + 'px', height: CFG.height + 'px' } }, inner);
   }
 
+  function sleep(ms){ return new Promise(function(r){ setTimeout(r, Math.max(0, ms)); }); }
+  function nextPaint(){ return new Promise(function(r){ requestAnimationFrame(function(){ r(); }); }); }
+
+  function pickMime(){
+    if(!window.MediaRecorder) return '';
+    var list = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'];
+    for(var i=0;i<list.length;i++){ try { if(MediaRecorder.isTypeSupported(list[i])) return list[i]; } catch(e){} }
+    return '';
+  }
+
+  /* Zeichnet den (unskalierten) 1920x1080-Composition-DOM per SVG/foreignObject
+     auf ein Canvas – nutzt nur Inline-Styles, daher kein CORS/Taint. */
+  function drawDomToCanvas(node, ctx, W, H){
+    return new Promise(function(resolve, reject){
+      var xml = new XMLSerializer().serializeToString(node);
+      var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '">'
+        + '<foreignObject width="100%" height="100%">'
+        + '<div xmlns="http://www.w3.org/1999/xhtml" style="width:' + W + 'px;height:' + H + 'px;overflow:hidden">'
+        + xml + '</div></foreignObject></svg>';
+      var img = new Image();
+      img.onload = function(){ ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); ctx.drawImage(img, 0, 0, W, H); resolve(); };
+      img.onerror = function(){ reject(new Error('Frame konnte nicht gezeichnet werden.')); };
+      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    });
+  }
+
+  function dl(blob, name){
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a'); a.href = url; a.download = name;
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(url); if(a.parentNode) a.parentNode.removeChild(a); }, 60000);
+  }
+
   function App(){
     var fs = React.useState(0), frame = fs[0], setFrame = fs[1];
     var ps = React.useState(true), playing = ps[0], setPlaying = ps[1];
+    var xs = React.useState(null), exp = xs[0], setExp = xs[1]; // null | 0..1 (Fortschritt) | 'err'
+    var busy = typeof exp === 'number';
+
     React.useEffect(function(){
-      if(!playing) return;
+      if(!playing || busy) return;
       var raf, startT = performance.now(), base = frame;
       function loop(now){
         var f = base + ((now - startT) / 1000) * CFG.fps;
@@ -245,16 +284,58 @@ export const RemotionRoot: React.FC = () => (
       }
       raf = requestAnimationFrame(loop);
       return function(){ cancelAnimationFrame(raf); };
-    }, [playing]);
+    }, [playing, busy]);
+
+    async function doExport(){
+      var mime = pickMime();
+      if(!mime){ setExp('err'); setTimeout(function(){ setExp(null); }, 4000); return; }
+      setPlaying(false); setExp(0);
+      await nextPaint();
+      var W = CFG.width, H = CFG.height, total = CFG.durationInFrames;
+      var canvas = document.createElement('canvas'); canvas.width = W; canvas.height = H;
+      var ctx = canvas.getContext('2d');
+      var stream = canvas.captureStream(0);
+      var track = stream.getVideoTracks()[0];
+      var rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 8000000 });
+      var chunks = [];
+      rec.ondataavailable = function(e){ if(e.data && e.data.size) chunks.push(e.data); };
+      var stopped = new Promise(function(res){ rec.onstop = res; });
+      var dt = 1000 / CFG.fps;
+      try {
+        rec.start();
+        var t0 = performance.now();
+        for(var f = 0; f < total; f++){
+          setFrame(f);
+          await nextPaint();
+          await drawDomToCanvas(document.querySelector('.qs-canvas'), ctx, W, H);
+          if(track.requestFrame) track.requestFrame();
+          setExp((f + 1) / total);
+          // Frame-Takt an die Ziel-fps koppeln, damit die Wiedergabe-Geschwindigkeit stimmt.
+          await sleep((t0 + (f + 1) * dt) - performance.now());
+        }
+        rec.stop();
+        await stopped;
+        var ext = (mime.indexOf('mp4') >= 0) ? 'mp4' : 'webm';
+        dl(new Blob(chunks, { type: mime.split(';')[0] }), 'quantum-video.' + ext);
+        setExp(null); setFrame(0); setPlaying(true);
+      } catch(err){
+        try { rec.stop(); } catch(e){}
+        setExp('err'); setTimeout(function(){ setExp(null); }, 4000);
+      }
+    }
+
     var cur = Math.floor(frame);
     var secs = (cur / CFG.fps).toFixed(2);
     var total = (CFG.durationInFrames / CFG.fps).toFixed(2);
+    var note = (exp === 'err') ? 'Export hier nicht möglich' : (busy ? 'Export ' + Math.round(exp * 100) + '%' : '');
     return h('div', { className:'qs-root' },
       h('div', { className:'qs-viewport' }, h('div', { className:'qs-scale', id:'qs-scale' }, h(Stage, { frame: frame }))),
       h('div', { className:'qs-bar' },
-        h('button', { className:'qs-btn', title: playing ? 'Pause' : 'Play', onClick: function(){ setPlaying(!playing); } }, playing ? '\\u23F8' : '\\u25B6'),
-        h('input', { className:'qs-range', type:'range', min:0, max: Math.max(0, CFG.durationInFrames - 1), step:1, value: cur, onChange: function(e){ setPlaying(false); setFrame(Number(e.target.value)); } }),
-        h('span', { className:'qs-time' }, secs + 's / ' + total + 's')
+        h('button', { className:'qs-btn', title: playing ? 'Pause' : 'Play', disabled: busy, onClick: function(){ setPlaying(!playing); } }, playing ? '\\u23F8' : '\\u25B6'),
+        h('input', { className:'qs-range', type:'range', min:0, max: Math.max(0, CFG.durationInFrames - 1), step:1, value: cur, disabled: busy, onChange: function(e){ setPlaying(false); setFrame(Number(e.target.value)); } }),
+        h('span', { className:'qs-time' }, secs + 's / ' + total + 's'),
+        h('button', { className:'qs-btn qs-export', title:'Als Video (.webm) exportieren', disabled: busy, onClick: doExport }, busy ? '\\u2026' : '\\u2B07'),
+        note ? h('span', { className:'qs-note' }, note) : null
       )
     );
   }
@@ -397,13 +478,13 @@ export const RemotionRoot: React.FC = () => (
       '  </div>' +
       '  <div class="tts-studio__status" data-testid="video-status" aria-live="polite"></div>' +
       '  <div class="tts-studio__result" hidden>' +
-      '    <iframe class="video-studio__frame" data-testid="video-preview" title="Live-Vorschau" sandbox="allow-scripts" referrerpolicy="no-referrer"></iframe>' +
+      '    <iframe class="video-studio__frame" data-testid="video-preview" title="Live-Vorschau" sandbox="allow-scripts allow-downloads" referrerpolicy="no-referrer"></iframe>' +
       '    <div class="video-studio__downloads">' +
       '      <button class="tts-studio__download" data-testid="video-dl-comp" data-kind="comp">⬇ MyVideo.tsx</button>' +
       '      <button class="tts-studio__download" data-kind="root">⬇ Root.tsx</button>' +
       '      <button class="tts-studio__download" data-kind="html">⬇ Studio.html</button>' +
       '    </div>' +
-      '    <p class="video-studio__hint">Finales MP4 im eigenen Studio: <code>npx create-video@latest</code> → <code>MyVideo.tsx</code> + <code>Root.tsx</code> in <code>src/</code> → <code>npx remotion studio</code> (Vorschau &amp; Scrub) · <code>npx remotion render MyVideo out/video.mp4</code></p>' +
+      '    <p class="video-studio__hint">In der Vorschau: <strong>⬇</strong> exportiert das Video direkt als <code>.webm</code> – ganz ohne Rendern. Für ein finales MP4 im eigenen Studio: <code>npx create-video@latest</code> → <code>MyVideo.tsx</code> + <code>Root.tsx</code> in <code>src/</code> → <code>npx remotion studio</code> · <code>npx remotion render MyVideo out/video.mp4</code></p>' +
       '  </div>' +
       '</div>';
     document.body.appendChild(modal);

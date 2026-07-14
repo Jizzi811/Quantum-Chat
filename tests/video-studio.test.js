@@ -83,3 +83,10 @@ test('buildStudioHtml bettet React, Babel, Player und die Dauer ein', () => {
   // Imports im eingebetteten Composition-Code sind entfernt.
   assert.ok(!/import\s+\{\s*AbsoluteFill/.test(html));
 });
+
+test('buildStudioHtml enthält den .webm-Export (MediaRecorder)', () => {
+  const html = video.buildStudioHtml({ code: video.fallbackComposition('X'), seconds: 4, fps: 30 });
+  assert.match(html, /MediaRecorder/);
+  assert.match(html, /captureStream/);
+  assert.match(html, /quantum-video\./);
+});
