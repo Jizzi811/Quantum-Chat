@@ -24,6 +24,20 @@ test('isPublicHttpUrl blockt interne/private Adressen und fremde Schemata (SSRF)
   assert.equal(browseFn.isPublicHttpUrl('kein-url'), false);
 });
 
+test('isPrivateIp erkennt private/loopback/link-local IPs (v4, v6, mapped)', () => {
+  assert.equal(browseFn.isPrivateIp('127.0.0.1'), true);
+  assert.equal(browseFn.isPrivateIp('10.1.2.3'), true);
+  assert.equal(browseFn.isPrivateIp('192.168.0.1'), true);
+  assert.equal(browseFn.isPrivateIp('172.20.5.5'), true);
+  assert.equal(browseFn.isPrivateIp('169.254.169.254'), true);
+  assert.equal(browseFn.isPrivateIp('::1'), true);
+  assert.equal(browseFn.isPrivateIp('fe80::1'), true);
+  assert.equal(browseFn.isPrivateIp('fd00::1'), true);
+  assert.equal(browseFn.isPrivateIp('::ffff:169.254.169.254'), true);
+  assert.equal(browseFn.isPrivateIp('8.8.8.8'), false);
+  assert.equal(browseFn.isPrivateIp('2606:4700:4700::1111'), false);
+});
+
 test('htmlToText entfernt Skripte/Tags und zieht den Titel', () => {
   const html = '<html><head><title>Mein &amp; Titel</title></head><body>'
     + '<script>evil()</script><style>.x{}</style>'

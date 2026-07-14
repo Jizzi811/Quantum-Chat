@@ -11,35 +11,121 @@
    - QUANTUM_ALLOWED_ORIGIN Origin-Schutz (wie beim Chat-Gateway)
    ═══════════════════════════════════════════════════════════════ */
 
+const dns = require('node:dns').promises;
+const net = require('node:net');
 const { envValue, accessTokenList, isValidAccessToken, makeRateLimiter } = require('./quantum-shared.js');
 
 const UPSTREAM_TIMEOUT_MS = 8000;
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB Rohdaten-Obergrenze
 const MAX_TEXT = 12000;            // an das Prompt-Limit des Gateways angelehnt
+const MAX_REDIRECTS = 5;
 const withinRateLimit = makeRateLimiter(10, 60000);
 
-/* Nur öffentliche http(s)-URLs zulassen — blockt localhost, private
-   Netze und die Cloud-Metadaten-IP (SSRF-Schutz). Reine Funktion. */
+/* True für private/loopback/link-local/reservierte IPs (v4 & v6, inkl.
+   IPv4-mapped IPv6). SSRF-Kernprüfung. Reine Funktion. */
+function isPrivateIp(ip) {
+  if (!ip) return true;
+  let addr = String(ip);
+  const mapped = addr.match(/^::ffff:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/i);
+  if (mapped) addr = mapped[1];
+  if (net.isIPv4(addr)) {
+    const [a, b] = addr.split('.').map(Number);
+    if (a === 0 || a === 10 || a === 127) return true;
+    if (a === 169 && b === 254) return true;             // link-local + Metadaten
+    if (a === 172 && b >= 16 && b <= 31) return true;
+    if (a === 192 && b === 168) return true;
+    if (a === 100 && b >= 64 && b <= 127) return true;   // CGNAT
+    if (a >= 224) return true;                            // Multicast/reserviert
+    return false;
+  }
+  const low = addr.toLowerCase();
+  if (low === '::1' || low === '::' || low === '::0') return true;
+  if (low.startsWith('fe8') || low.startsWith('fe9') || low.startsWith('fea') || low.startsWith('feb')) return true; // fe80::/10
+  if (low.startsWith('fc') || low.startsWith('fd')) return true;  // ULA fc00::/7
+  return net.isIP(addr) ? false : true; // unbekanntes Format → sicherheitshalber sperren
+}
+
+/* Nur öffentliche http(s)-URLs zulassen (String-Ebene). Reine Funktion. */
 function isPublicHttpUrl(raw) {
   let url;
   try { url = new URL(String(raw)); } catch (_) { return false; }
   if (url.protocol !== 'http:' && url.protocol !== 'https:') return false;
   const host = url.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  if (!host) return false;
   if (host === 'localhost' || host.endsWith('.local') || host.endsWith('.internal')) return false;
-  if (host === '::1' || host === '0.0.0.0') return false;
-  /* IPv4-Literale in privaten/reservierten Bereichen abweisen. */
-  const m = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
-  if (m) {
-    const [a, b] = [Number(m[1]), Number(m[2])];
-    if (a === 10) return false;
-    if (a === 127) return false;
-    if (a === 0) return false;
-    if (a === 169 && b === 254) return false;            // link-local + Metadaten
-    if (a === 192 && b === 168) return false;
-    if (a === 172 && b >= 16 && b <= 31) return false;
-    if (a === 100 && b >= 64 && b <= 127) return false;  // CGNAT
-  }
+  if (net.isIP(host) && isPrivateIp(host)) return false;
   return true;
+}
+
+/* Löst den Hostnamen auf und wirft, wenn (irgend)eine Adresse privat ist —
+   blockt „Domain zeigt auf interne IP" (DNS-Rebinding im Ruhezustand). */
+async function assertResolvesPublic(hostname) {
+  if (net.isIP(hostname)) {
+    if (isPrivateIp(hostname)) throw ssrfError();
+    return;
+  }
+  let addrs;
+  try { addrs = await dns.lookup(hostname, { all: true }); }
+  catch (_) { throw new Error('DNS-Auflösung fehlgeschlagen.'); }
+  if (!addrs || !addrs.length) throw new Error('DNS-Auflösung fehlgeschlagen.');
+  for (const a of addrs) { if (isPrivateIp(a.address)) throw ssrfError(); }
+}
+
+function ssrfError() {
+  const e = new Error('Nicht erlaubte (interne) Adresse.');
+  e.ssrf = true;
+  return e;
+}
+
+/* Folgt Redirects MANUELL und prüft jede Ziel-URL + deren aufgelöste IPs,
+   bevor überhaupt verbunden wird. Gibt die finale Response zurück. */
+async function fetchSafely(startUrl, signal) {
+  let current = startUrl;
+  for (let i = 0; i <= MAX_REDIRECTS; i++) {
+    if (!isPublicHttpUrl(current)) throw ssrfError();
+    await assertResolvesPublic(new URL(current).hostname);
+    const res = await fetch(current, {
+      method: 'GET',
+      redirect: 'manual',
+      signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; QuantumWebReader/1.0)',
+        Accept: 'text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.5',
+      },
+    });
+    const location = res.headers.get('location');
+    if (res.status >= 300 && res.status < 400 && location) {
+      current = new URL(location, current).toString();
+      if (res.body && typeof res.body.cancel === 'function') { try { await res.body.cancel(); } catch (_) { /* egal */ } }
+      continue;
+    }
+    return { res, finalUrl: current };
+  }
+  const e = new Error('Zu viele Weiterleitungen.');
+  e.tooMany = true;
+  throw e;
+}
+
+/* Liest den Body inkrementell und bricht bei MAX_BYTES ab, damit ein
+   riesiger (chunked) Response die Function nicht überläuft. */
+async function readCapped(res, max) {
+  if (!res.body || typeof res.body.getReader !== 'function') {
+    const text = await res.text();
+    return text.length > max ? text.slice(0, max) : text;
+  }
+  const reader = res.body.getReader();
+  const parts = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    parts.push(value);
+    total += value.length;
+    if (total >= max) { try { await reader.cancel(); } catch (_) { /* egal */ } break; }
+  }
+  let buf = Buffer.concat(parts.map((p) => Buffer.from(p)));
+  if (buf.length > max) buf = buf.slice(0, max);
+  return buf.toString('utf8');
 }
 
 /* Grobe, abhängigkeitsfreie HTML→Text-Extraktion. Reine Funktion. */
@@ -95,32 +181,26 @@ exports.handler = async (event) => {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
   try {
-    const res = await fetch(target, {
-      method: 'GET',
-      redirect: 'follow',
-      signal: controller.signal,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; QuantumWebReader/1.0)',
-        Accept: 'text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.5',
-      },
-    });
+    const { res, finalUrl } = await fetchSafely(target, controller.signal);
     if (!res.ok) return response(502, { error: 'Seite nicht erreichbar (HTTP ' + res.status + ').' });
 
-    const finalUrl = res.url || target;
-    if (!isPublicHttpUrl(finalUrl)) return response(400, { error: 'Weiterleitung auf eine nicht erlaubte Adresse.' });
     const contentType = String(res.headers.get('content-type') || '');
     if (!/text\/html|text\/plain|application\/xhtml/i.test(contentType)) {
+      if (res.body && typeof res.body.cancel === 'function') { try { await res.body.cancel(); } catch (_) { /* egal */ } }
       return response(415, { error: 'Kein lesbarer Text (Content-Type: ' + (contentType || 'unbekannt') + ').' });
     }
     const declaredLength = Number(res.headers.get('content-length') || 0);
     if (declaredLength && declaredLength > MAX_BYTES) return response(413, { error: 'Seite ist zu groß.' });
 
-    const raw = await res.text();
-    const { title, text } = htmlToText(raw.slice(0, MAX_BYTES));
+    const raw = await readCapped(res, MAX_BYTES);
+    const { title, text } = htmlToText(raw);
     if (!text) return response(422, { error: 'Auf der Seite wurde kein lesbarer Text gefunden.' });
     const truncated = text.length > MAX_TEXT;
     return response(200, { url: finalUrl, title, text: truncated ? text.slice(0, MAX_TEXT) : text, truncated });
   } catch (error) {
+    if (error && error.ssrf) return response(400, { error: 'Weiterleitung/Adresse verweist auf ein internes Ziel.' });
+    if (error && error.tooMany) return response(400, { error: 'Zu viele Weiterleitungen.' });
+    if (error && /DNS-Auflösung/.test(error.message || '')) return response(502, { error: error.message });
     const msg = error && error.name === 'AbortError'
       ? 'Zeitlimit überschritten – die Seite hat zu lange gebraucht.'
       : 'Seite konnte nicht geladen werden.';
@@ -136,4 +216,5 @@ function response(statusCode, payload) {
 
 /* Reine Helfer für Unit-Tests. */
 exports.isPublicHttpUrl = isPublicHttpUrl;
+exports.isPrivateIp = isPrivateIp;
 exports.htmlToText = htmlToText;
