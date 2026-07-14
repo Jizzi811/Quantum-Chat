@@ -6,7 +6,28 @@ Inferenz-Dienst von Nous Research. Er stellt die hauseigenen **Hermes**-Modelle
 — dieselbe Schnittstelle, die Quantums Gateway ohnehin spricht. Damit lässt sich
 Hermes direkt als KI-Modell im Chat und in allen Skills nutzen.
 
-## Einrichtung
+## Kostenlose Alternative: Hermes über OpenRouter (ohne Nous-Key)
+
+Nous Portal ist **kostenpflichtig**. Die Hermes-Modelle gibt es aber gratis
+über OpenRouter, das in Quantum-Chat bereits als Provider eingebaut ist — du
+brauchst dann **keinen `NOUS_API_KEY`**:
+
+1. Kostenlosen OpenRouter-Key erstellen: <https://openrouter.ai/keys>
+2. In Netlify unter **Project configuration → Environment variables** setzen:
+   - `OPENROUTER_API_KEY`: dein Key
+   - `OPENROUTER_MODEL`: `nousresearch/hermes-3-llama-3.1-405b:free`
+   - `NOUS_API_KEY` **nicht** setzen (bzw. leeren), damit nicht der bezahlte
+     Nous-Provider greift
+3. Site neu deployen.
+
+> Hinweis: Das kostenlose `nousresearch/hermes-3-llama-3.1-405b:free` wird laut
+> OpenRouter am **19. Juli 2026** abgeschaltet. Danach — oder als dauerhaft
+> freie Wahl — einfach `OPENROUTER_MODEL` weglassen: Standard ist dann
+> `openrouter/free`, das automatisch ein verfügbares Gratis-Modell wählt (nicht
+> zwingend Hermes). Freie OpenRouter-Modelle sind auf ca. 20 Anfragen/Minute
+> begrenzt.
+
+## Einrichtung (bezahltes Nous Portal)
 
 1. API-Key erstellen: In [portal.nousresearch.com](https://portal.nousresearch.com)
    anmelden und unter **API Keys** einen Schlüssel anlegen.
