@@ -53,6 +53,59 @@ window.Quantum = window.Quantum || {};
     return code;
   }
 
+  /* ── URL-Erkennung (optionale Quelle für den Video-Inhalt) ─────── */
+
+  /* Findet die erste http(s)-URL im Text (ohne anhängende Satzzeichen). Reine Funktion. */
+  function extractUrl(text) {
+    const m = String(text || '').match(/https?:\/\/[^\s<>"']+/i);
+    if (!m) return null;
+    return m[0].replace(/[.,;:!?)\]]+$/, '');
+  }
+
+  /* Baut die Reader-Proxy-URL (r.jina.ai liefert lesbaren Klartext, CORS-fähig). Reine Funktion. */
+  function buildReaderUrl(url) {
+    return 'https://r.jina.ai/' + url;
+  }
+
+  /* Kürzt langen Seitentext an einer Wortgrenze. Reine Funktion. */
+  function truncateContent(text, max) {
+    const t = String(text || '').trim();
+    const limit = max || 5000;
+    if (t.length <= limit) return t;
+    return t.slice(0, limit).replace(/\s+\S*$/, '') + ' …';
+  }
+
+  /* Holt den Klartext einer Seite über den Reader-Proxy (nur Text, kein Bild → Export bleibt taint-frei). */
+  async function fetchReadable(url) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 12000);
+    try {
+      const res = await fetch(buildReaderUrl(url), { signal: ctrl.signal, headers: { 'X-Return-Format': 'text' } });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return (await res.text()).trim();
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  /* Ersetzt eine URL im Prompt durch den geladenen Seitentext. Fällt bei Fehlern
+     still auf den Originaltext zurück. Liefert { prompt, note }. */
+  async function resolvePrompt(prompt) {
+    const url = extractUrl(prompt);
+    if (!url) return { prompt: prompt, note: '' };
+    try {
+      const content = await fetchReadable(url);
+      if (!content) return { prompt: prompt, note: '⚠️ Seite ohne lesbaren Text – Text-Prompt genutzt' };
+      const rest = prompt.replace(url, '').trim();
+      const combined = 'Erstelle ein Video auf Basis dieses Seiteninhalts von ' + url + ':\n\n'
+        + truncateContent(content, 5000)
+        + (rest ? '\n\nZusätzlicher Stilwunsch: ' + rest : '');
+      return { prompt: combined, note: '🔗 Seiteninhalt geladen' };
+    } catch (_) {
+      return { prompt: prompt, note: '⚠️ URL nicht erreichbar – Text-Prompt genutzt' };
+    }
+  }
+
   /* Lokales Fallback-Template, falls kein KI-Zugang / keine brauchbare Antwort. */
   function fallbackComposition(title) {
     const safe = String(title || 'Quantum Clip').replace(/[`$\\]/g, '').slice(0, 60) || 'Quantum Clip';
@@ -408,6 +461,17 @@ export const RemotionRoot: React.FC = () => (
   async function generateComposition(prompt, seconds) {
     const ai = window.Quantum.ai;
     const frames = Math.round(seconds * FPS);
+
+    /* Optional: URL im Prompt erkennen und ihren Seitentext (nur Text) laden.
+       Nur wenn KI-Zugang da ist — das lokale Fallback-Template nutzt den Inhalt nicht. */
+    let aiPrompt = prompt;
+    let urlNote = '';
+    if (ai && ai.hasAccess && ai.hasAccess()) {
+      const resolved = await resolvePrompt(prompt);
+      aiPrompt = resolved.prompt;
+      urlNote = resolved.note;
+    }
+
     const request = {
       system: 'You are a senior Remotion (v4) motion designer. Return ONE complete, self-contained Remotion composition as a single TSX file.'
         + ' Export a React component named MyVideo. Import only from "remotion" and "react" (AbsoluteFill, useCurrentFrame, interpolate, spring,'
@@ -416,7 +480,7 @@ export const RemotionRoot: React.FC = () => (
         + ' Read fps and durationInFrames from useVideoConfig(); never hardcode them. The clip is about ' + seconds + ' seconds long (' + frames + ' frames at ' + FPS + 'fps).'
         + ' Fill the ENTIRE duration with motion — for longer clips, split the timeline into several <Sequence from=... durationInFrames=...> scenes so nothing sits static.'
         + ' Assume ' + WIDTH + 'x' + HEIGHT + '. Output ONLY the TSX code in a single ```tsx code block, no explanation.',
-      prompt: 'Create this Remotion video (~' + seconds + 's): ' + prompt,
+      prompt: 'Create this Remotion video (~' + seconds + 's): ' + aiPrompt,
       temperature: 0.5,
     };
 
@@ -446,6 +510,7 @@ export const RemotionRoot: React.FC = () => (
         : '⚠️ ' + providerLabel(error.provider) + ' fehlgeschlagen (`' + (error.model || 'Modell unbekannt') + '`): ' + (error.message || 'nicht erreichbar') + ' – lokales Template genutzt';
     }
     if (!code) code = fallbackComposition(prompt);
+    if (urlNote) status = urlNote + (status ? ' · ' + status : '');
     return { code: code, status: status, model: model };
   }
 
@@ -467,7 +532,7 @@ export const RemotionRoot: React.FC = () => (
       '    <button class="tts-studio__close" data-testid="video-close" title="Schließen">✕</button>' +
       '  </div>' +
       '  <label class="tts-studio__label" for="vid-prompt">Video-Beschreibung</label>' +
-      '  <textarea id="vid-prompt" class="tts-studio__text" data-testid="video-prompt" rows="3" maxlength="2000" placeholder="z. B. „Intro mit Neon-Logo, Titel ‚QUANTUM‘ und Partikel-Sog"></textarea>' +
+      '  <textarea id="vid-prompt" class="tts-studio__text" data-testid="video-prompt" rows="3" maxlength="2000" placeholder="z. B. „Intro mit Neon-Logo, Titel ‚QUANTUM‘ und Partikel-Sog“ — oder füge eine URL ein, dann baue ich das Video aus dem Seiteninhalt"></textarea>' +
       '  <div class="tts-studio__row">' +
       '    <label class="tts-studio__label">Länge (Sekunden)' +
       '      <input id="vid-seconds" class="tts-studio__num" data-testid="video-seconds" type="number" min="' + MIN_SECONDS + '" max="' + MAX_SECONDS + '" step="1" value="' + DEFAULT_SECONDS + '" />' +
@@ -558,6 +623,9 @@ export const RemotionRoot: React.FC = () => (
 
   window.Quantum.videoStudio = {
     extractCode: extractCode,
+    extractUrl: extractUrl,
+    buildReaderUrl: buildReaderUrl,
+    truncateContent: truncateContent,
     fallbackComposition: fallbackComposition,
     parseDuration: parseDuration,
     stripForBrowser: stripForBrowser,
@@ -569,8 +637,8 @@ export const RemotionRoot: React.FC = () => (
 
   window.Quantum.skills.register({
     id: 'video', icon: '🎬', name: 'Remotion Video Studio',
-    desc: 'Generiert ein Remotion-Video mit Live-Vorschau (ohne Rendern)',
-    usage: '/skill video 20s Intro mit Neon-Logo, Titel und Partikeln',
+    desc: 'Generiert ein Remotion-Video mit Live-Vorschau (ohne Rendern) — auch aus einer URL',
+    usage: '/skill video 20s Intro mit Neon-Logo · oder: /skill video https://…',
     run(input) {
       const prompt = input.trim();
       const seconds = parseDuration(prompt);
