@@ -90,3 +90,23 @@ test('buildStudioHtml enthält den .webm-Export (MediaRecorder)', () => {
   assert.match(html, /captureStream/);
   assert.match(html, /quantum-video\./);
 });
+
+test('extractUrl findet die erste http(s)-URL ohne Satzzeichen', () => {
+  assert.equal(video.extractUrl('Mach ein Video aus https://example.com/artikel.'), 'https://example.com/artikel');
+  assert.equal(video.extractUrl('siehe http://a.io/x?y=1 und mehr'), 'http://a.io/x?y=1');
+  assert.equal(video.extractUrl('kein Link hier'), null);
+  assert.equal(video.extractUrl(''), null);
+});
+
+test('buildReaderUrl hängt die URL an den Reader-Proxy', () => {
+  assert.equal(video.buildReaderUrl('https://example.com/x'), 'https://r.jina.ai/https://example.com/x');
+});
+
+test('truncateContent kürzt an Wortgrenze und hängt Ellipse an', () => {
+  assert.equal(video.truncateContent('kurz', 100), 'kurz');
+  const long = 'wort '.repeat(50).trim(); // 249 Zeichen
+  const cut = video.truncateContent(long, 20);
+  assert.ok(cut.length <= 24);
+  assert.match(cut, / …$/);
+  assert.ok(!/\S…$/.test(cut)); // Schnitt an Wortgrenze, nicht mitten im Wort
+});

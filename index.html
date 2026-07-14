@@ -36,6 +36,7 @@
   <link rel="stylesheet" href="css/tts-studio.css" />
   <link rel="stylesheet" href="css/video-studio.css" />
   <link rel="stylesheet" href="css/songsee.css" />
+  <link rel="stylesheet" href="css/tools.css" />
   <link rel="stylesheet" href="css/sell.css" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚛️</text></svg>" />
 </head>
@@ -229,6 +230,8 @@
       <div class="overview-tabs" role="tablist" aria-label="Übersicht">
         <button type="button" class="overview-tab is-active" role="tab" aria-selected="true" data-overview-tab="automations">⟳ AUTOMATIONEN</button>
         <button type="button" class="overview-tab" role="tab" aria-selected="false" data-overview-tab="songsee">🌊 SONGSEE</button>
+        <button type="button" class="overview-tab" role="tab" aria-selected="false" data-overview-tab="uebersetzer">🌍 ÜBERSETZER</button>
+        <button type="button" class="overview-tab" role="tab" aria-selected="false" data-overview-tab="factcheck">🔍 FAKTENCHECK</button>
       </div>
       <div class="overview-panel" data-overview-panel="automations">
       <p class="q-panel__hint">Quantum arbeitet auch, wenn du nicht da bist: zeitgesteuert oder wenn ein Ereignis eintritt.</p>
@@ -255,38 +258,82 @@
       </div>
       </div>
 
-      <section class="overview-panel songsee" data-overview-panel="songsee" hidden aria-label="Songsee Audio-Visualisierung">
-        <p class="q-panel__hint">Verwandle Musik oder Sprache direkt im Browser in ein farbiges Spektrogramm. Deine Audiodatei wird nicht hochgeladen.</p>
+      <section class="overview-panel songsee" data-overview-panel="songsee" hidden aria-label="Songsee Beat-Visualizer">
+        <p class="q-panel__hint">Lade Musik und sieh eine Neon-Visualisierung, die zum Beat reagiert. Datei bleibt lokal — nimm sie mit ⏺ als Video (.webm inkl. Ton) auf.</p>
         <label class="songsee__drop">
           <span>🎵 Audiodatei auswählen<small>WAV, MP3 oder ein Browser-kompatibles Audioformat</small></span>
           <input type="file" id="songsee-file" accept="audio/*,.wav,.mp3" />
         </label>
         <div class="songsee__controls">
-          <label class="songsee__field songsee__field--wide">Farbstil
+          <label class="songsee__field">Visual-Stil
+            <select id="songsee-visual" class="songsee__input">
+              <option value="ringe">Ringe / Radial</option>
+              <option value="balken">Balken</option>
+              <option value="partikel">Partikel</option>
+            </select>
+          </label>
+          <label class="songsee__field">Farbstil
             <select id="songsee-style" class="songsee__input">
-              <option value="classic">Quantum Classic</option>
+              <option value="neon">Quantum Neon</option>
+              <option value="classic">Classic</option>
               <option value="magma">Magma</option>
               <option value="inferno">Inferno</option>
               <option value="viridis">Viridis</option>
-              <option value="gray">Grau</option>
             </select>
           </label>
-          <label class="songsee__field">Start (Sek.)<input id="songsee-start" class="songsee__input" type="number" min="0" step="0.1" value="0" /></label>
-          <label class="songsee__field">Dauer (Sek.)<input id="songsee-duration" class="songsee__input" type="number" min="0.1" step="0.1" placeholder="komplett" /></label>
         </div>
         <div class="songsee__actions">
-          <button type="button" class="songsee__button" id="songsee-render">SPEKTROGRAMM ERZEUGEN</button>
-          <button type="button" class="songsee__button songsee__button--secondary" id="songsee-download" disabled title="Als PNG speichern">⇩ PNG</button>
+          <button type="button" class="songsee__button" id="songsee-play" title="Wiedergabe / Pause">▶</button>
+          <button type="button" class="songsee__button songsee__button--secondary" id="songsee-record" title="Als Video (.webm) aufnehmen">⏺ .WEBM</button>
         </div>
-        <div class="songsee__canvas-wrap"><canvas class="songsee__canvas" id="songsee-canvas" width="720" height="405" aria-label="Generiertes Spektrogramm"></canvas></div>
+        <div class="songsee__canvas-wrap"><canvas class="songsee__canvas" id="songsee-canvas" width="720" height="405" aria-label="Beat-Visualisierung"></canvas></div>
         <p class="songsee__status" id="songsee-status" role="status">Bereit für deine Audiodatei.</p>
+      </section>
+
+      <section class="overview-panel tool" data-overview-panel="uebersetzer" hidden aria-label="Übersetzer">
+        <p class="q-panel__hint">Übersetzt Text in eine beliebige Sprache — die Ausgangssprache wird automatisch erkannt.</p>
+        <textarea id="translate-input" class="tool__text" rows="4" maxlength="5000" placeholder="Text zum Übersetzen …"></textarea>
+        <label class="tool__field">Zielsprache
+          <select id="translate-target" class="tool__input">
+            <option value="">Automatisch (→ Deutsch/Englisch)</option>
+            <option value="Deutsch">Deutsch</option>
+            <option value="Englisch">Englisch</option>
+            <option value="Französisch">Französisch</option>
+            <option value="Spanisch">Spanisch</option>
+            <option value="Italienisch">Italienisch</option>
+            <option value="Türkisch">Türkisch</option>
+            <option value="Russisch">Russisch</option>
+            <option value="Arabisch">Arabisch</option>
+            <option value="Chinesisch">Chinesisch</option>
+            <option value="Japanisch">Japanisch</option>
+            <option value="Portugiesisch">Portugiesisch</option>
+            <option value="Niederländisch">Niederländisch</option>
+            <option value="Polnisch">Polnisch</option>
+          </select>
+        </label>
+        <div class="tool__actions">
+          <button type="button" class="tool__button" id="translate-run">🌍 ÜBERSETZEN</button>
+          <button type="button" class="tool__button tool__button--secondary" id="translate-copy" disabled title="Ergebnis kopieren">⧉ Kopieren</button>
+        </div>
+        <textarea id="translate-output" class="tool__text tool__text--out" rows="4" readonly placeholder="Übersetzung erscheint hier …"></textarea>
+        <p class="tool__status" id="translate-status" role="status"></p>
+      </section>
+
+      <section class="overview-panel tool" data-overview-panel="factcheck" hidden aria-label="Faktenchecker">
+        <p class="q-panel__hint">Prüft eine Behauptung gegen Wikipedia-Belege und fällt ein KI-Urteil (✅/❌/⚠️). Gut für enzyklopädische Aussagen, schwach bei tagesaktuellen Ereignissen.</p>
+        <textarea id="factcheck-input" class="tool__text" rows="3" maxlength="500" placeholder="Behauptung, z. B. „Die Berliner Mauer fiel 1989“ …"></textarea>
+        <div class="tool__actions">
+          <button type="button" class="tool__button" id="factcheck-run">🔍 PRÜFEN</button>
+        </div>
+        <pre class="tool__output" id="factcheck-output" aria-live="polite"></pre>
+        <p class="tool__status" id="factcheck-status" role="status"></p>
       </section>
     </aside>
   </main>
 
   <footer class="q-footer">
     <span>QUANTUM v1.0 — dein AI Worker mit Skills, Studios &amp; Automationen.</span>
-    <a class="q-footer__catalog" href="output/pdf/Quantum_Produktkatalog_Skills_und_Expertenprompts.pdf" target="_blank" rel="noopener">Produktkatalog &amp; Expertenprompts ↗</a>
+    <a class="q-footer__catalog" href="output/produktkatalog.html" target="_blank" rel="noopener">Produktkatalog &amp; Anleitung ↗</a>
     <span class="q-footer__powered">powered by <b>NADJ.AI</b></span>
   </footer>
 
@@ -304,7 +351,10 @@
   <script src="js/tts-studio.js"></script>
   <script src="js/image-studio.js"></script>
   <script src="js/video-studio.js"></script>
+  <script src="js/overview-tabs.js"></script>
   <script src="js/songsee.js"></script>
+  <script src="js/translator.js"></script>
+  <script src="js/factcheck.js"></script>
   <script src="js/uploads.js"></script>
   <script src="js/ai-agents.js"></script>
   <script src="js/app.js"></script>
