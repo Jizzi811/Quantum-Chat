@@ -1,0 +1,48 @@
+/* ═══════════════════════════════════════════════════════════════
+   QUANTUM — Video-Studio (Modal + Live-Vorschau)
+   Baut auf den .tts-studio-Klassen auf, nur breiter für die Vorschau.
+   ═══════════════════════════════════════════════════════════════ */
+
+.video-studio__card {
+  width: min(94vw, 860px);
+}
+
+.video-studio__frame {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  background: #05030c;
+}
+
+.video-studio__downloads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  margin-top: 0.3rem;
+}
+
+.video-studio__downloads .tts-studio__download {
+  align-self: auto;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  background: none;
+  border: none;
+  border-bottom: 1px dashed currentColor;
+}
+
+.video-studio__hint {
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: var(--text-dim);
+}
+
+.video-studio__hint code {
+  padding: 0.05rem 0.32rem;
+  border-radius: 5px;
+  background: var(--bg-glass);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+}
