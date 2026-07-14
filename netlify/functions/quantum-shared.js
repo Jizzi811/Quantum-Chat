@@ -3,12 +3,21 @@
 /* Unterstützte Provider in Prioritätsreihenfolge: der erste, dessen
    API-Key gesetzt ist, gewinnt. Alle sprechen die OpenAI-kompatible
    Chat-Completions-API — nur Basis-URL, Key und Modell unterscheiden sich.
+   - nous:       Nous Portal (inference-api.nousresearch.com), Hermes-Modelle
    - nebius:     Nebius Token Factory (studio.nebius.com), günstig pro Token
    - gemini:     kostenloser Free-Tier (aistudio.google.com/apikey)
    - groq:       kostenloser Free-Tier (console.groq.com/keys), sehr schnell
    - nvidia:     NVIDIA Build (integrate.api.nvidia.com)
    - openrouter: Sammel-Gateway mit freien Modellen */
 const PROVIDERS = [
+  {
+    name: 'nous',
+    url: 'https://inference-api.nousresearch.com/v1/chat/completions',
+    modelsUrl: 'https://inference-api.nousresearch.com/v1/models',
+    defaultModel: 'Hermes-4-70B',
+    keyEnv: 'NOUS_API_KEY',
+    modelEnv: 'NOUS_MODEL',
+  },
   {
     name: 'nebius',
     url: 'https://api.studio.nebius.com/v1/chat/completions',

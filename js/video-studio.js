@@ -16,7 +16,7 @@ window.Quantum = window.Quantum || {};
 (function () {
   'use strict';
 
-  const PROVIDER_LABELS = { gemini: 'Gemini', groq: 'Groq', nvidia: 'NVIDIA/Qwen', openrouter: 'OpenRouter', custom: 'Custom-Gateway' };
+  const PROVIDER_LABELS = { nous: 'Nous/Hermes', gemini: 'Gemini', groq: 'Groq', nvidia: 'NVIDIA/Qwen', openrouter: 'OpenRouter', custom: 'Custom-Gateway' };
   function providerLabel(id) { return PROVIDER_LABELS[String(id || '').toLowerCase()] || 'KI-Modell'; }
 
   const DEFAULT_SECONDS = 8;

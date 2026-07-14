@@ -27,12 +27,14 @@ Das Gateway nimmt den ersten konfigurierten Provider in dieser Reihenfolge:
    z. B. `https://mein-server.example.com/v1`. Das Gateway muss öffentlich
    erreichbar sein — `localhost` auf dem eigenen PC funktioniert nicht,
    weil die Netlify Functions in der Cloud laufen.
-2. `NEBIUS_API_KEY` (+ optional `NEBIUS_MODEL`) — Nebius Token Factory
+2. `NOUS_API_KEY` (+ optional `NOUS_MODEL`) — Nous Portal / Hermes-Modelle,
+   siehe `NOUS_SETUP.md`
+3. `NEBIUS_API_KEY` (+ optional `NEBIUS_MODEL`) — Nebius Token Factory
    (studio.nebius.com), Standardmodell `meta-llama/Llama-3.3-70B-Instruct`
-3. `GEMINI_API_KEY` (+ optional `GEMINI_MODEL`) — siehe `GEMINI_SETUP.md`
-4. `GROQ_API_KEY` (+ optional `GROQ_MODEL`)
-5. `NVIDIA_API_KEY` (+ optional `NVIDIA_MODEL`)
-6. `OPENROUTER_API_KEY` (+ optional `OPENROUTER_MODEL`)
+4. `GEMINI_API_KEY` (+ optional `GEMINI_MODEL`) — siehe `GEMINI_SETUP.md`
+5. `GROQ_API_KEY` (+ optional `GROQ_MODEL`)
+6. `NVIDIA_API_KEY` (+ optional `NVIDIA_MODEL`)
+7. `OPENROUTER_API_KEY` (+ optional `OPENROUTER_MODEL`)
 
 Ein noch vorhandener `NVIDIA_API_KEY` stört also nicht: sobald
 `GROQ_API_KEY` gesetzt ist, wird Groq verwendet.
