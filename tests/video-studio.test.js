@@ -43,3 +43,50 @@ test('fallbackComposition entschärft gefährliche Zeichen im Titel', () => {
   assert.match(code, />abcd</);
   assert.ok(!code.includes('a`b$c'));
 });
+
+test('parseDuration liest Sekunden, Minuten und mm:ss und clamped', () => {
+  assert.equal(video.parseDuration('10s Intro'), 10);
+  assert.equal(video.parseDuration('30 sekunden Clip'), 30);
+  assert.equal(video.parseDuration('2 min Doku'), 120);
+  assert.equal(video.parseDuration('1:30 Trailer'), 90);
+  assert.equal(video.parseDuration('kein Zeitwert hier'), 8); // Default
+  assert.equal(video.parseDuration('999s'), 120);             // clamp Maximum
+  assert.equal(video.parseDuration('1s'), 2);                 // clamp Minimum
+});
+
+test('stripForBrowser entfernt Imports und Exports, behält den Code', () => {
+  const src = "import React from 'react';\n"
+    + "import { AbsoluteFill } from 'remotion';\n"
+    + 'export const MyVideo = () => null;\n';
+  const out = video.stripForBrowser(src);
+  assert.ok(!/\bimport\b/.test(out));
+  assert.ok(!/\bexport\b/.test(out));
+  assert.match(out, /const MyVideo = \(\) => null/);
+});
+
+test('rootTsx setzt Dauer und Format dynamisch', () => {
+  const root = video.rootTsx(300, 30, 1920, 1080);
+  assert.match(root, /durationInFrames=\{300\}/);
+  assert.match(root, /fps=\{30\}/);
+  assert.match(root, /width=\{1920\}/);
+});
+
+test('buildStudioHtml bettet React, Babel, Player und die Dauer ein', () => {
+  const html = video.buildStudioHtml({ code: video.fallbackComposition('Hallo'), seconds: 6, fps: 30 });
+  assert.match(html, /react@18/);
+  assert.match(html, /react-dom@18/);
+  assert.match(html, /@babel\/standalone/);
+  assert.match(html, /type="text\/babel"/);
+  assert.match(html, /"durationInFrames":180/); // 6s * 30fps
+  assert.match(html, /Hallo/);
+  assert.match(html, /__mountStudio/);
+  // Imports im eingebetteten Composition-Code sind entfernt.
+  assert.ok(!/import\s+\{\s*AbsoluteFill/.test(html));
+});
+
+test('buildStudioHtml enthält den .webm-Export (MediaRecorder)', () => {
+  const html = video.buildStudioHtml({ code: video.fallbackComposition('X'), seconds: 4, fps: 30 });
+  assert.match(html, /MediaRecorder/);
+  assert.match(html, /captureStream/);
+  assert.match(html, /quantum-video\./);
+});
