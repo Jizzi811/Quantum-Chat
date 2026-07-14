@@ -1,0 +1,61 @@
+/* QUANTUM — Übersicht-Werkzeuge (Übersetzer, Faktenchecker) */
+
+.tool { gap: .7rem; }
+
+.tool__text {
+  width: 100%;
+  resize: vertical;
+  min-height: 3.4rem;
+  background: rgba(0,245,255,.04);
+  border: 1px solid rgba(0,245,255,.25);
+  border-radius: 8px;
+  color: var(--text-main);
+  padding: .55rem .6rem;
+  font: .82rem/1.45 var(--font-mono);
+}
+.tool__text:focus { outline: none; border-color: var(--neon-cyan); box-shadow: 0 0 12px rgba(0,245,255,.2); }
+.tool__text--out { background: rgba(255,45,247,.04); border-color: rgba(255,45,247,.25); color: var(--text-main); }
+
+.tool__field { display: grid; gap: .2rem; color: var(--text-dim); font-size: .7rem; }
+.tool__input {
+  width: 100%;
+  background: rgba(0,245,255,.04);
+  border: 1px solid rgba(0,245,255,.25);
+  border-radius: 6px;
+  color: var(--text-main);
+  padding: .48rem;
+  font: .8rem var(--font-mono);
+}
+.tool__input option { background: var(--bg-deep); }
+
+.tool__actions { display: grid; grid-template-columns: 1fr auto; gap: .45rem; }
+.tool__button {
+  border: 0;
+  border-radius: 6px;
+  padding: .58rem;
+  background: linear-gradient(90deg,var(--neon-cyan),var(--neon-purple));
+  color: var(--bg-void);
+  font: 700 .67rem var(--font-display);
+  letter-spacing: .08em;
+  cursor: pointer;
+}
+.tool__button--secondary { border: 1px solid rgba(0,245,255,.35); background: transparent; color: var(--neon-cyan); }
+.tool__button:disabled { opacity: .38; cursor: not-allowed; }
+
+.tool__output {
+  margin: 0;
+  max-height: 260px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: #030010;
+  border: 1px solid rgba(255,45,247,.22);
+  border-radius: 8px;
+  padding: .6rem .7rem;
+  color: var(--text-main);
+  font: .78rem/1.5 var(--font-mono);
+}
+.tool__output:empty { display: none; }
+
+.tool__status { min-height: 1.2em; color: var(--text-dim); font: .68rem var(--font-mono); }
+.tool__status--error { color: #ff6ba8; }

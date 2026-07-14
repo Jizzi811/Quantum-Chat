@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Quantum — Produktkatalog & Anleitung</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;900&family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { background: #1a1626; margin: 0; font-family: 'Rajdhani', sans-serif; }
+  a { color: #00f5ff; text-decoration: none; }
+  a:hover { color: #ff2df7; }
+  .catalog { display: flex; flex-direction: column; align-items: center; gap: 24px; padding: 24px; }
+  .page { box-shadow: 0 0 40px rgba(0,0,0,0.5); }
+  code { font-family: 'JetBrains Mono', monospace; }
+  @media print {
+    html, body { background: #030014; }
+    .catalog { gap: 0; padding: 0; }
+    .page { box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+<div class="catalog" style="font-family: 'Rajdhani', sans-serif;">
+
+<!-- ══════════════════════ PAGE 1 — COVER ══════════════════════ -->
+<div class="page" style="width: 210mm; min-height: 297mm; box-sizing: border-box; position: relative; overflow: hidden; background: radial-gradient(ellipse 60% 50% at 15% 10%, rgba(0,245,255,0.16), transparent 60%), radial-gradient(ellipse 60% 50% at 90% 95%, rgba(255,45,247,0.16), transparent 60%), #030014; padding: 26mm 20mm; display: flex; flex-direction: column; justify-content: space-between;">
+  <div style="position: absolute; inset: 0; background-image: linear-gradient(rgba(0,245,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(157,77,255,0.05) 1px, transparent 1px); background-size: 28px 28px; pointer-events: none;"></div>
+  <div style="position: relative; display: flex; align-items: center; gap: 10px;">
+    <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.3em; color: #9a93c9; border: 1px solid rgba(157,77,255,0.35); border-radius: 3px; padding: 4px 10px;">QUANTUM v1.0</span>
+    <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.2em; color: #39ff14;">● ONLINE</span>
+  </div>
+  <div style="position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 22px;">
+    <div style="position: relative; width: 150px; height: 150px;">
+      <div style="position: absolute; inset: -22%; border-radius: 50%; background: radial-gradient(circle, rgba(0,245,255,0.35), rgba(157,77,255,0.2) 45%, rgba(255,45,247,0.12) 62%, transparent 74%); filter: blur(8px);"></div>
+      <div style="position: absolute; inset: 8%; border-radius: 50%; background: radial-gradient(circle at 50% 42%, #17103c 0%, #0a0424 58%, #03000f 100%); box-shadow: inset 0 0 26px rgba(0,245,255,0.35), inset 0 -8px 20px rgba(157,77,255,0.4), inset 0 4px 10px rgba(255,255,255,0.14), 0 0 30px rgba(0,245,255,0.4), 0 0 56px rgba(157,77,255,0.32); overflow: hidden;">
+        <div style="position: absolute; inset: -30%; border-radius: 50%; background: radial-gradient(closest-side at 30% 30%, rgba(0,245,255,0.95), transparent 62%), radial-gradient(closest-side at 72% 38%, rgba(255,45,247,0.9), transparent 60%), radial-gradient(closest-side at 50% 74%, rgba(157,77,255,0.95), transparent 64%); filter: blur(1px) saturate(1.4); opacity: 0.9;"></div>
+        <div style="position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(closest-side at 34% 26%, rgba(255,255,255,0.5), transparent 46%);"></div>
+      </div>
+    </div>
+    <h1 style="font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 76px; letter-spacing: 0.28em; margin: 0; padding-left: 0.28em; background: linear-gradient(90deg, #00f5ff, #9d4dff, #ff2df7); -webkit-background-clip: text; background-clip: text; color: transparent;">QUANTUM</h1>
+    <div style="font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 22px; letter-spacing: 0.16em; color: #e8e6ff;">PRODUKTKATALOG &amp; ANLEITUNG</div>
+    <p style="max-width: 460px; font-size: 17px; line-height: 1.6; color: #9a93c9; margin: 0;">Dein AI Worker im Neon-Universum: Chat, Skills, Studios und Automationen — verständlich erklärt, damit jeder sofort loslegen kann.</p>
+  </div>
+  <div style="position: relative; display: flex; justify-content: space-between; align-items: flex-end; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9a93c9; letter-spacing: 0.1em; border-top: 1px dashed rgba(157,77,255,0.3); padding-top: 14px;">
+    <span>Stand: Juli 2026</span>
+    <span>inkl. Bonus: Experten-Prompts</span>
+    <span>powered by <b style="color: #e8e6ff;">NADJ.AI</b></span>
+  </div>
+</div>
+
+<!-- ══════════════════════ PAGE 2 — INHALT ══════════════════════ -->
+<div class="page" style="width: 210mm; min-height: 297mm; box-sizing: border-box; background: #07021f; padding: 26mm 22mm; display: flex; flex-direction: column; gap: 26px;">
+  <div>
+    <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.3em; color: #00f5ff;">◈ ÜBERSICHT</span>
+    <h2 style="font-family: 'Orbitron', sans-serif; font-size: 30px; letter-spacing: 0.08em; color: #e8e6ff; margin: 10px 0 0;">Inhaltsverzeichnis</h2>
+  </div>
+
+    <div style="display: flex; align-items: baseline; gap: 18px; padding: 16px 0; border-bottom: 1px solid rgba(157,77,255,0.2);">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 600; color: #00f5ff; min-width: 44px;">01</span>
+      <div style="flex: 1;">
+        <div style="font-family: 'Orbitron', sans-serif; font-size: 17px; letter-spacing: 0.03em; color: #e8e6ff;">Was ist Quantum?</div>
+        <div style="font-size: 14px; color: #9a93c9; margin-top: 4px;">Der Überblick über Chat, Studios, Skills und Automationen.</div>
+      </div>
+    </div>
+    <div style="display: flex; align-items: baseline; gap: 18px; padding: 16px 0; border-bottom: 1px solid rgba(157,77,255,0.2);">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 600; color: #9d4dff; min-width: 44px;">02</span>
+      <div style="flex: 1;">
+        <div style="font-family: 'Orbitron', sans-serif; font-size: 17px; letter-spacing: 0.03em; color: #e8e6ff;">Die Studios im Überblick</div>
+        <div style="font-size: 14px; color: #9a93c9; margin-top: 4px;">Bild-, Video-, TTS-, Game-Studio und Songsee im Detail.</div>
+      </div>
+    </div>
+    <div style="display: flex; align-items: baseline; gap: 18px; padding: 16px 0; border-bottom: 1px solid rgba(157,77,255,0.2);">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 600; color: #00f5ff; min-width: 44px;">03</span>
+      <div style="flex: 1;">
+        <div style="font-family: 'Orbitron', sans-serif; font-size: 17px; letter-spacing: 0.03em; color: #e8e6ff;">Skills — Werkzeuge im Chat</div>
+        <div style="font-size: 14px; color: #9a93c9; margin-top: 4px;">Alle 8 eingebauten Skills mit Befehl und Beispiel.</div>
+      </div>
+    </div>
+    <div style="display: flex; align-items: baseline; gap: 18px; padding: 16px 0; border-bottom: 1px solid rgba(157,77,255,0.2);">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 600; color: #ff2df7; min-width: 44px;">04</span>
+      <div style="flex: 1;">
+        <div style="font-family: 'Orbitron', sans-serif; font-size: 17px; letter-spacing: 0.03em; color: #e8e6ff;">Automationen</div>
+        <div style="font-size: 14px; color: #9a93c9; margin-top: 4px;">Auslöser, Aktionen und fertige Rezepte zum Nachbauen.</div>
+      </div>
+    </div>
+    <div style="display: flex; align-items: baseline; gap: 18px; padding: 16px 0; border-bottom: 1px solid rgba(157,77,255,0.2);">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 600; color: #9d4dff; min-width: 44px;">05</span>
+      <div style="flex: 1;">
+        <div style="font-family: 'Orbitron', sans-serif; font-size: 17px; letter-spacing: 0.03em; color: #e8e6ff;">So chattest du richtig</div>
+        <div style="font-size: 14px; color: #9a93c9; margin-top: 4px;">Vier Gewohnheiten für bessere Antworten.</div>
+      </div>
+    </div>
+    <div style="display: flex; align-items: baseline; gap: 18px; padding: 16px 0; border-bottom: 1px solid rgba(157,77,255,0.2);">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 600; color: #faff00; min-width: 44px;">06</span>
+      <div style="flex: 1;">
+        <div style="font-family: 'Orbitron', sans-serif; font-size: 17px; letter-spacing: 0.03em; color: #e8e6ff;">Bonus: Experten-Prompts</div>
+        <div style="font-size: 14px; color: #9a93c9; margin-top: 4px;">Fertige Prompts zum Kopieren für Chat und Studios.</div>
+      </div>
+    </div>
+  <div style="margin-top: auto; padding: 18px 20px; border-radius: 8px; background: rgba(0,245,255,0.05); border: 1px solid rgba(0,245,255,0.2);">
+    <div style="font-family: 'Orbitron', sans-serif; font-size: 13px; letter-spacing: 0.1em; color: #00f5ff; margin-bottom: 6px;">💡 SO LIEST DU DIESEN KATALOG</div>
+    <div style="font-size: 14px; line-height: 1.6; color: #9a93c9;">Jeder Abschnitt zeigt dir, <em>was</em> ein Feature tut und <em>wie genau</em> du es im Chat aufrufst — inklusive Befehl, Beispiel und Ergebnis. Am Ende findest du fertige Experten-Prompts zum direkten Kopieren.</div>
+  </div>
+</div>
+
+<!-- ══════════════════════ PAGE 3 — WAS IST QUANTUM ══════════════════════ -->
+<div class="page" style="width: 210mm; min-height: 297mm; box-sizing: border-box; background: #07021f; padding: 26mm 22mm; display: flex; flex-direction: column; gap: 20px;">
+  <div>
+    <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.3em; color: #00f5ff;">01 · GRUNDLAGEN</span>
+    <h2 style="font-family: 'Orbitron', sans-serif; font-size: 28px; letter-spacing: 0.06em; color: #e8e6ff; margin: 10px 0 6px;">Was ist Quantum?</h2>
+    <p style="font-size: 15px; line-height: 1.65; color: #9a93c9; max-width: 640px; margin: 0;">Quantum ist ein KI-Wesen, das aus deinen Gedanken funktionierende Dinge baut. Im Zentrum steht ein Chat-Fenster — drumherum gruppieren sich Studios für Bild, Video, Sprache und Spiele sowie ein System aus Skills und Automationen, die Quantum eigenständig für dich arbeiten lassen.</p>
+  </div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 6px;">
+
+      <div style="display: flex; gap: 12px; align-items: flex-start; padding: 16px; border-radius: 8px; background: rgba(0,245,255,0.04); border: 1px solid rgba(0,245,255,0.18); break-inside: avoid;">
+        <span style="font-size: 24px; line-height: 1; filter: drop-shadow(0 0 6px rgba(0,245,255,0.6));">💬</span>
+        <div>
+          <div style="font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.02em; color: #e8e6ff;">KI-Chat</div>
+          <div style="font-size: 13px; color: #9a93c9; line-height: 1.5; margin-top: 4px;">Antworten live vom konfigurierten KI-Modell — das Herzstück von Quantum.</div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 12px; align-items: flex-start; padding: 16px; border-radius: 8px; background: rgba(0,245,255,0.04); border: 1px solid rgba(0,245,255,0.18); break-inside: avoid;">
+        <span style="font-size: 24px; line-height: 1; filter: drop-shadow(0 0 6px rgba(0,245,255,0.6));">🎨</span>
+        <div>
+          <div style="font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.02em; color: #e8e6ff;">Bild-Studio</div>
+          <div style="font-size: 13px; color: #9a93c9; line-height: 1.5; margin-top: 4px;">Bilder aus Text generieren, per Gemini/Imagen.</div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 12px; align-items: flex-start; padding: 16px; border-radius: 8px; background: rgba(0,245,255,0.04); border: 1px solid rgba(0,245,255,0.18); break-inside: avoid;">
+        <span style="font-size: 24px; line-height: 1; filter: drop-shadow(0 0 6px rgba(0,245,255,0.6));">🎬</span>
+        <div>
+          <div style="font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.02em; color: #e8e6ff;">Video-Studio</div>
+          <div style="font-size: 13px; color: #9a93c9; line-height: 1.5; margin-top: 4px;">Remotion-Videos direkt per Prompt erzeugen.</div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 12px; align-items: flex-start; padding: 16px; border-radius: 8px; background: rgba(0,245,255,0.04); border: 1px solid rgba(0,245,255,0.18); break-inside: avoid;">
+        <span style="font-size: 24px; line-height: 1; filter: drop-shadow(0 0 6px rgba(0,245,255,0.6));">🔊</span>
+        <div>
+          <div style="font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.02em; color: #e8e6ff;">TTS Studio</div>
+          <div style="font-size: 13px; color: #9a93c9; line-height: 1.5; margin-top: 4px;">Text zu Sprache mit VoxCPM &amp; eigenem Stimm-Design.</div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 12px; align-items: flex-start; padding: 16px; border-radius: 8px; background: rgba(0,245,255,0.04); border: 1px solid rgba(0,245,255,0.18); break-inside: avoid;">
+        <span style="font-size: 24px; line-height: 1; filter: drop-shadow(0 0 6px rgba(0,245,255,0.6));">🎮</span>
+        <div>
+          <div style="font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.02em; color: #e8e6ff;">Game Studio</div>
+          <div style="font-size: 13px; color: #9a93c9; line-height: 1.5; margin-top: 4px;">Spielbare Browser-Games per Prompt bauen.</div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 12px; align-items: flex-start; padding: 16px; border-radius: 8px; background: rgba(0,245,255,0.04); border: 1px solid rgba(0,245,255,0.18); break-inside: avoid;">
+        <span style="font-size: 24px; line-height: 1; filter: drop-shadow(0 0 6px rgba(0,245,255,0.6));">⟳</span>
+        <div>
+          <div style="font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.02em; color: #e8e6ff;">Automationen</div>
+          <div style="font-size: 13px; color: #9a93c9; line-height: 1.5; margin-top: 4px;">Trigger &amp; Aktionen einrichten — ganz ohne Code.</div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 12px; align-items: flex-start; padding: 16px; border-radius: 8px; background: rgba(0,245,255,0.04); border: 1px solid rgba(0,245,255,0.18); break-inside: avoid;">
+        <span style="font-size: 24px; line-height: 1; filter: drop-shadow(0 0 6px rgba(0,245,255,0.6));">🌊</span>
+        <div>
+          <div style="font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.02em; color: #e8e6ff;">Songsee</div>
+          <div style="font-size: 13px; color: #9a93c9; line-height: 1.5; margin-top: 4px;">Audio direkt im Browser als farbiges Spektrogramm sichtbar machen.</div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 12px; align-items: flex-start; padding: 16px; border-radius: 8px; background: rgba(0,245,255,0.04); border: 1px solid rgba(0,245,255,0.18); break-inside: avoid;">
+        <span style="font-size: 24px; line-height: 1; filter: drop-shadow(0 0 6px rgba(0,245,255,0.6));">◈</span>
+        <div>
+          <div style="font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.02em; color: #e8e6ff;">Skills-Panel</div>
+          <div style="font-size: 13px; color: #9a93c9; line-height: 1.5; margin-top: 4px;">Kleine Werkzeuge, die du an- und ausschalten kannst.</div>
+        </div>
+      </div>
+  </div>
+  <div style="margin-top: 8px; padding: 18px 20px; border-radius: 8px; background: rgba(255,45,247,0.05); border: 1px solid rgba(255,45,247,0.2);">
+    <div style="font-family: 'Orbitron', sans-serif; font-size: 13px; letter-spacing: 0.1em; color: #ff2df7; margin-bottom: 6px;">⚡ EINSTIEG</div>
+    <div style="font-size: 14px; line-height: 1.6; color: #9a93c9;">Tippe einfach in das Chat-Feld — für Befehle und Studios reicht ein Klick in den Panels links und rechts. Mit <code style="color: #e8e6ff; background: rgba(157,77,255,0.15); padding: 2px 6px; border-radius: 4px;">/help</code> zeigt dir Quantum jederzeit alle verfügbaren Befehle.</div>
+  </div>
+</div>
+
+<!-- ══════════════════════ PAGE 4 — STUDIOS ══════════════════════ -->
+<div class="page" style="width: 210mm; min-height: 297mm; box-sizing: border-box; background: #07021f; padding: 26mm 22mm; display: flex; flex-direction: column; gap: 18px;">
+  <div>
+    <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.3em; color: #00f5ff;">02 · STUDIOS</span>
+    <h2 style="font-family: 'Orbitron', sans-serif; font-size: 28px; letter-spacing: 0.06em; color: #e8e6ff; margin: 10px 0 6px;">Die Studios im Überblick</h2>
+    <p style="font-size: 15px; line-height: 1.6; color: #9a93c9; max-width: 640px; margin: 0;">Jedes Studio ist auf eine Aufgabe spezialisiert. Öffne es über sein Panel-Icon und beschreibe in eigenen Worten, was entstehen soll.</p>
+  </div>
+
+    <div style="display: flex; gap: 16px; padding: 16px 18px; border-radius: 8px; background: rgba(157,77,255,0.05); border: 1px solid rgba(157,77,255,0.22); break-inside: avoid;">
+      <span style="font-size: 26px; line-height: 1;">🎨</span>
+      <div style="flex: 1;">
+        <div style="display: flex; align-items: baseline; gap: 10px;">
+          <span style="font-family: 'Orbitron', sans-serif; font-size: 15px; font-weight: 700; color: #e8e6ff;">Bild-Studio</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9d4dff;">Gemini / Imagen</span>
+        </div>
+        <div style="font-size: 13px; color: #9a93c9; line-height: 1.55; margin-top: 5px;">Beschreibe ein Bild in Worten — Motiv, Stil, Stimmung, Farben — und Quantum generiert es.</div>
+        <div style="font-size: 13px; color: #00f5ff; margin-top: 6px; font-style: italic;">„Halte Bildideen konkret: Motiv, Stil, Licht, Perspektive.“</div>
+      </div>
+    </div>
+    <div style="display: flex; gap: 16px; padding: 16px 18px; border-radius: 8px; background: rgba(157,77,255,0.05); border: 1px solid rgba(157,77,255,0.22); break-inside: avoid;">
+      <span style="font-size: 26px; line-height: 1;">🎬</span>
+      <div style="flex: 1;">
+        <div style="display: flex; align-items: baseline; gap: 10px;">
+          <span style="font-family: 'Orbitron', sans-serif; font-size: 15px; font-weight: 700; color: #e8e6ff;">Video-Studio</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9d4dff;">Remotion</span>
+        </div>
+        <div style="font-size: 13px; color: #9a93c9; line-height: 1.55; margin-top: 5px;">Aus einem Prompt entsteht ein animiertes Video-Kurzformat, Szene für Szene aufgebaut.</div>
+        <div style="font-size: 13px; color: #00f5ff; margin-top: 6px; font-style: italic;">„Beschreibe die Szenenfolge wie ein kleines Drehbuch.“</div>
+      </div>
+    </div>
+    <div style="display: flex; gap: 16px; padding: 16px 18px; border-radius: 8px; background: rgba(157,77,255,0.05); border: 1px solid rgba(157,77,255,0.22); break-inside: avoid;">
+      <span style="font-size: 26px; line-height: 1;">🔊</span>
+      <div style="flex: 1;">
+        <div style="display: flex; align-items: baseline; gap: 10px;">
+          <span style="font-family: 'Orbitron', sans-serif; font-size: 15px; font-weight: 700; color: #e8e6ff;">TTS Studio</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9d4dff;">VoxCPM</span>
+        </div>
+        <div style="font-size: 13px; color: #9a93c9; line-height: 1.55; margin-top: 5px;">Text wird zu natürlicher Sprache — inklusive eigenem Stimm-Design für Tonfall und Charakter.</div>
+        <div style="font-size: 13px; color: #00f5ff; margin-top: 6px; font-style: italic;">„Gib Tonfall und Tempo mit an: ruhig, energisch, erzählend …“</div>
+      </div>
+    </div>
+    <div style="display: flex; gap: 16px; padding: 16px 18px; border-radius: 8px; background: rgba(157,77,255,0.05); border: 1px solid rgba(157,77,255,0.22); break-inside: avoid;">
+      <span style="font-size: 26px; line-height: 1;">🎮</span>
+      <div style="flex: 1;">
+        <div style="display: flex; align-items: baseline; gap: 10px;">
+          <span style="font-family: 'Orbitron', sans-serif; font-size: 15px; font-weight: 700; color: #e8e6ff;">Game Studio</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9d4dff;">Browser-Games</span>
+        </div>
+        <div style="font-size: 13px; color: #9a93c9; line-height: 1.55; margin-top: 5px;">Aus einer Spielidee entsteht ein direkt spielbares Browser-Game.</div>
+        <div style="font-size: 13px; color: #00f5ff; margin-top: 6px; font-style: italic;">„Nenne Spielprinzip, Steuerung und Ziel in einem Satz.“</div>
+      </div>
+    </div>
+    <div style="display: flex; gap: 16px; padding: 16px 18px; border-radius: 8px; background: rgba(157,77,255,0.05); border: 1px solid rgba(157,77,255,0.22); break-inside: avoid;">
+      <span style="font-size: 26px; line-height: 1;">🌊</span>
+      <div style="flex: 1;">
+        <div style="display: flex; align-items: baseline; gap: 10px;">
+          <span style="font-family: 'Orbitron', sans-serif; font-size: 15px; font-weight: 700; color: #e8e6ff;">Songsee</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9d4dff;">Lokale Analyse</span>
+        </div>
+        <div style="font-size: 13px; color: #9a93c9; line-height: 1.55; margin-top: 5px;">Verwandelt eine Audiodatei direkt im Browser in ein farbiges Spektrogramm — nichts wird hochgeladen.</div>
+        <div style="font-size: 13px; color: #00f5ff; margin-top: 6px; font-style: italic;">„Wähle einen Farbstil und grenze bei Bedarf Start &amp; Dauer ein.“</div>
+      </div>
+    </div>
+</div>
+
+<!-- ══════════════════════ PAGE 5 — SKILLS INTRO + 1-4 ══════════════════════ -->
+<div class="page" style="width: 210mm; min-height: 297mm; box-sizing: border-box; background: #07021f; padding: 26mm 22mm; display: flex; flex-direction: column; gap: 18px;">
+  <div>
+    <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.3em; color: #00f5ff;">03 · SKILLS</span>
+    <h2 style="font-family: 'Orbitron', sans-serif; font-size: 28px; letter-spacing: 0.06em; color: #e8e6ff; margin: 10px 0 6px;">Skills — Werkzeuge im Chat</h2>
+    <p style="font-size: 15px; line-height: 1.6; color: #9a93c9; max-width: 640px; margin: 0 0 4px;">Skills sind kleine, sofort einsatzbereite Funktionen direkt im Chat. Rufe sie mit <code style="color: #e8e6ff; background: rgba(157,77,255,0.15); padding: 2px 6px; border-radius: 4px;">/skill &lt;name&gt; &lt;eingabe&gt;</code> auf oder klicke sie im Skills-Panel an. Jeder Skill lässt sich dort einzeln ein- und ausschalten.</p>
+  </div>
+
+    <div style="padding: 16px 18px; border-radius: 8px; background: rgba(0,245,255,0.04); border: 1px solid rgba(0,245,255,0.2); break-inside: avoid;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 22px;">🧮</span>
+        <span style="font-family: 'Orbitron', sans-serif; font-size: 15px; font-weight: 700; color: #e8e6ff;">Neuro-Rechner</span>
+        <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9a93c9; border: 1px solid rgba(157,77,255,0.3); border-radius: 99px; padding: 2px 10px;">/skill rechner</span>
+      </div>
+      <div style="font-size: 13.5px; color: #9a93c9; line-height: 1.55; margin-top: 8px;">Rechnet mathematische Ausdrücke inklusive Klammern und Potenzen.</div>
+      <div style="margin-top: 10px; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; background: #030014; border-radius: 6px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px;">
+        <div style="color: #ff2df7;">» /skill rechner 12*(3+4)^2</div>
+        <div style="color: #39ff14;">« ⚡ Ergebnis: 588</div>
+      </div>
+    </div>
+    <div style="padding: 16px 18px; border-radius: 8px; background: rgba(0,245,255,0.04); border: 1px solid rgba(0,245,255,0.2); break-inside: avoid;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 22px;">💡</span>
+        <span style="font-family: 'Orbitron', sans-serif; font-size: 15px; font-weight: 700; color: #e8e6ff;">Ideen-Generator</span>
+        <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9a93c9; border: 1px solid rgba(157,77,255,0.3); border-radius: 99px; padding: 2px 10px;">/skill ideen</span>
+      </div>
+      <div style="font-size: 13.5px; color: #9a93c9; line-height: 1.55; margin-top: 8px;">Wirft dir spontan eine Produkt- oder Projektidee zu.</div>
+      <div style="margin-top: 10px; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; background: #030014; border-radius: 6px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px;">
+        <div style="color: #ff2df7;">» /skill ideen</div>
+        <div style="color: #39ff14;">« 💡 Idee: Ein Habit-Tracker, der Gewohnheiten als leuchtende Neon-Ringe zeigt</div>
+      </div>
+    </div>
+    <div style="padding: 16px 18px; border-radius: 8px; background: rgba(0,245,255,0.04); border: 1px solid rgba(0,245,255,0.2); break-inside: avoid;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 22px;">📝</span>
+        <span style="font-family: 'Orbitron', sans-serif; font-size: 15px; font-weight: 700; color: #e8e6ff;">Text-Kompressor</span>
+        <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9a93c9; border: 1px solid rgba(157,77,255,0.3); border-radius: 99px; padding: 2px 10px;">/skill zusammenfassen</span>
+      </div>
+      <div style="font-size: 13.5px; color: #9a93c9; line-height: 1.55; margin-top: 8px;">Fasst eingefügten Text auf die zwei zentralen Kernsätze zusammen.</div>
+      <div style="margin-top: 10px; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; background: #030014; border-radius: 6px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px;">
+        <div style="color: #ff2df7;">» /skill zusammenfassen &lt;Text&gt;</div>
+        <div style="color: #39ff14;">« Kurzfassung (6 Sätze → 2): » …</div>
+      </div>
+    </div>
+    <div style="padding: 16px 18px; border-radius: 8px; background: rgba(0,245,255,0.04); border: 1px solid rgba(0,245,255,0.2); break-inside: avoid;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 22px;">🔐</span>
+        <span style="font-family: 'Orbitron', sans-serif; font-size: 15px; font-weight: 700; color: #e8e6ff;">Passwort-Schmiede</span>
+        <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9a93c9; border: 1px solid rgba(157,77,255,0.3); border-radius: 99px; padding: 2px 10px;">/skill passwort</span>
+      </div>
+      <div style="font-size: 13.5px; color: #9a93c9; line-height: 1.55; margin-top: 8px;">Erzeugt ein starkes, zufälliges Passwort — rein lokal im Browser.</div>
+      <div style="margin-top: 10px; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; background: #030014; border-radius: 6px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px;">
+        <div style="color: #ff2df7;">» /skill passwort 20</div>
+        <div style="color: #39ff14;">« 🔐 xT9!kLm2Qz…</div>
+      </div>
+    </div>
+</div>
+
+<!-- ══════════════════════ PAGE 6 — SKILLS 5-8 ══════════════════════ -->
+<div class="page" style="width: 210mm; min-height: 297mm; box-sizing: border-box; background: #07021f; padding: 26mm 22mm; display: flex; flex-direction: column; gap: 18px;">
+  <div>
+    <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.3em; color: #00f5ff;">03 · SKILLS (Fortsetzung)</span>
+    <h2 style="font-family: 'Orbitron', sans-serif; font-size: 24px; letter-spacing: 0.05em; color: #e8e6ff; margin: 10px 0 0;">Weitere Skills</h2>
+  </div>
+
+    <div style="padding: 16px 18px; border-radius: 8px; background: rgba(0,245,255,0.04); border: 1px solid rgba(0,245,255,0.2); break-inside: avoid;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 22px;">🎲</span>
+        <span style="font-family: 'Orbitron', sans-serif; font-size: 15px; font-weight: 700; color: #e8e6ff;">Quanten-Würfel</span>
+        <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9a93c9; border: 1px solid rgba(157,77,255,0.3); border-radius: 99px; padding: 2px 10px;">/skill wuerfel</span>
+      </div>
+      <div style="font-size: 13.5px; color: #9a93c9; line-height: 1.55; margin-top: 8px;">Würfelt beliebige Kombinationen wie im Pen-&amp;-Paper-Spiel.</div>
+      <div style="margin-top: 10px; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; background: #030014; border-radius: 6px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px;">
+        <div style="color: #ff2df7;">» /skill wuerfel 3w6</div>
+        <div style="color: #39ff14;">« 🎲 3W6 → [4 | 2 | 6]  Σ 12</div>
+      </div>
+    </div>
+    <div style="padding: 16px 18px; border-radius: 8px; background: rgba(0,245,255,0.04); border: 1px solid rgba(0,245,255,0.2); break-inside: avoid;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 22px;">🔥</span>
+        <span style="font-family: 'Orbitron', sans-serif; font-size: 15px; font-weight: 700; color: #e8e6ff;">Hype-Modul</span>
+        <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9a93c9; border: 1px solid rgba(157,77,255,0.3); border-radius: 99px; padding: 2px 10px;">/skill motivation</span>
+      </div>
+      <div style="font-size: 13.5px; color: #9a93c9; line-height: 1.55; margin-top: 8px;">Ein kurzer Energie-Schub auf Abruf.</div>
+      <div style="margin-top: 10px; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; background: #030014; border-radius: 6px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px;">
+        <div style="color: #ff2df7;">» /skill motivation</div>
+        <div style="color: #39ff14;">« 🔥 Version 1 ist besser als Version niemals.</div>
+      </div>
+    </div>
+    <div style="padding: 16px 18px; border-radius: 8px; background: rgba(0,245,255,0.04); border: 1px solid rgba(0,245,255,0.2); break-inside: avoid;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 22px;">⏳</span>
+        <span style="font-family: 'Orbitron', sans-serif; font-size: 15px; font-weight: 700; color: #e8e6ff;">Zeit-Kristall</span>
+        <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9a93c9; border: 1px solid rgba(157,77,255,0.3); border-radius: 99px; padding: 2px 10px;">/skill countdown</span>
+      </div>
+      <div style="font-size: 13.5px; color: #9a93c9; line-height: 1.55; margin-top: 8px;">Zählt die Tage bis zu einem beliebigen Datum.</div>
+      <div style="margin-top: 10px; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; background: #030014; border-radius: 6px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px;">
+        <div style="color: #ff2df7;">» /skill countdown 2026-12-31</div>
+        <div style="color: #39ff14;">« ⏳ Noch 170 Tage bis 31.12.2026</div>
+      </div>
+    </div>
+    <div style="padding: 16px 18px; border-radius: 8px; background: rgba(0,245,255,0.04); border: 1px solid rgba(0,245,255,0.2); break-inside: avoid;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 22px;">⚖️</span>
+        <span style="font-family: 'Orbitron', sans-serif; font-size: 15px; font-weight: 700; color: #e8e6ff;">Orakel</span>
+        <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9a93c9; border: 1px solid rgba(157,77,255,0.3); border-radius: 99px; padding: 2px 10px;">/skill entscheider</span>
+      </div>
+      <div style="font-size: 13.5px; color: #9a93c9; line-height: 1.55; margin-top: 8px;">Entscheidet zufällig zwischen zwei oder mehr Optionen.</div>
+      <div style="margin-top: 10px; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; background: #030014; border-radius: 6px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px;">
+        <div style="color: #ff2df7;">» /skill entscheider Pizza oder Sushi</div>
+        <div style="color: #39ff14;">« ⚖️ Das Orakel hat gesprochen: Sushi</div>
+      </div>
+    </div>
+  <div style="margin-top: 4px; padding: 16px 18px; border-radius: 8px; background: rgba(250,255,0,0.05); border: 1px solid rgba(250,255,0,0.25);">
+    <div style="font-family: 'Orbitron', sans-serif; font-size: 13px; letter-spacing: 0.1em; color: #faff00; margin-bottom: 6px;">🔧 SKILLS EIN-/AUSSCHALTEN</div>
+    <div style="font-size: 13.5px; line-height: 1.55; color: #9a93c9;">Im Skills-Panel hat jede Karte einen Schalter. Deaktivierte Skills bleiben sichtbar, antworten im Chat aber nicht mehr — praktisch, um das Angebot für dich persönlich zu verschlanken.</div>
+  </div>
+</div>
+
+<!-- ══════════════════════ PAGE 7 — AUTOMATIONEN ══════════════════════ -->
+<div class="page" style="width: 210mm; min-height: 297mm; box-sizing: border-box; background: #07021f; padding: 26mm 22mm; display: flex; flex-direction: column; gap: 18px;">
+  <div>
+    <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.3em; color: #ff2df7;">04 · AUTOMATIONEN</span>
+    <h2 style="font-family: 'Orbitron', sans-serif; font-size: 28px; letter-spacing: 0.06em; color: #e8e6ff; margin: 10px 0 6px;">Quantum arbeitet für dich</h2>
+    <p style="font-size: 15px; line-height: 1.6; color: #9a93c9; max-width: 640px; margin: 0;">Automationen führen eine Aktion (meist einen Skill) automatisch aus — zeitgesteuert oder wenn ein Ereignis eintritt. Erstellt werden sie im Übersicht-Panel: Name vergeben, Auslöser wählen, Aktion + Eingabe festlegen, fertig.</p>
+  </div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+
+      <div style="padding: 14px 16px; border-radius: 8px; background: rgba(255,45,247,0.04); border: 1px solid rgba(255,45,247,0.2); border-left: 3px solid #ff2df7;">
+        <div style="font-family: 'Orbitron', sans-serif; font-size: 13.5px; font-weight: 700; color: #e8e6ff;">⏱ Alle X Minuten</div>
+        <div style="font-size: 13px; color: #9a93c9; line-height: 1.5; margin-top: 5px;">Löst die Aktion in einem festen Zeitintervall aus.</div>
+      </div>
+      <div style="padding: 14px 16px; border-radius: 8px; background: rgba(255,45,247,0.04); border: 1px solid rgba(255,45,247,0.2); border-left: 3px solid #ff2df7;">
+        <div style="font-family: 'Orbitron', sans-serif; font-size: 13.5px; font-weight: 700; color: #e8e6ff;">🕘 Täglich um Uhrzeit</div>
+        <div style="font-size: 13px; color: #9a93c9; line-height: 1.5; margin-top: 5px;">Führt die Aktion einmal am Tag zur gewählten Uhrzeit aus.</div>
+      </div>
+      <div style="padding: 14px 16px; border-radius: 8px; background: rgba(255,45,247,0.04); border: 1px solid rgba(255,45,247,0.2); border-left: 3px solid #ff2df7;">
+        <div style="font-family: 'Orbitron', sans-serif; font-size: 13.5px; font-weight: 700; color: #e8e6ff;">💬 Wenn Nachricht Stichwort enthält</div>
+        <div style="font-size: 13px; color: #9a93c9; line-height: 1.5; margin-top: 5px;">Reagiert, sobald ein bestimmtes Wort im Chat auftaucht.</div>
+      </div>
+      <div style="padding: 14px 16px; border-radius: 8px; background: rgba(255,45,247,0.04); border: 1px solid rgba(255,45,247,0.2); border-left: 3px solid #ff2df7;">
+        <div style="font-family: 'Orbitron', sans-serif; font-size: 13.5px; font-weight: 700; color: #e8e6ff;">🚀 Bei jedem Start</div>
+        <div style="font-size: 13px; color: #9a93c9; line-height: 1.5; margin-top: 5px;">Läuft automatisch, sobald Quantum geöffnet wird.</div>
+      </div>
+  </div>
+  <div style="margin-top: 6px;">
+    <div style="font-family: 'Orbitron', sans-serif; font-size: 13px; letter-spacing: 0.1em; color: #ff2df7; margin-bottom: 10px;">◫ FERTIGE AUTOMATIONS-REZEPTE</div>
+
+      <div style="display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px dashed rgba(157,77,255,0.2); align-items: baseline;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9d4dff; min-width: 90px;">Täglich 09:00</span>
+        <span style="font-size: 13.5px; color: #e8e6ff;">Zeit-Kristall zeigt den Countdown zum nächsten Meilenstein.</span>
+      </div>
+      <div style="display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px dashed rgba(157,77,255,0.2); align-items: baseline;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9d4dff; min-width: 90px;">Alle 60 Min</span>
+        <span style="font-size: 13.5px; color: #e8e6ff;">Hype-Modul schickt einen Motivationsspruch in den Chat.</span>
+      </div>
+      <div style="display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px dashed rgba(157,77,255,0.2); align-items: baseline;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9d4dff; min-width: 90px;">Stichwort „Idee“</span>
+        <span style="font-size: 13.5px; color: #e8e6ff;">Ideen-Generator wirft automatisch einen neuen Vorschlag zu.</span>
+      </div>
+      <div style="display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px dashed rgba(157,77,255,0.2); align-items: baseline;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9d4dff; min-width: 90px;">Bei jedem Start</span>
+        <span style="font-size: 13.5px; color: #e8e6ff;">Passwort-Schmiede hält ein frisches Passwort bereit.</span>
+      </div>
+  </div>
+</div>
+
+<!-- ══════════════════════ PAGE 8 — SO CHATTEST DU RICHTIG ══════════════════════ -->
+<div class="page" style="width: 210mm; min-height: 297mm; box-sizing: border-box; background: #07021f; padding: 26mm 22mm; display: flex; flex-direction: column; gap: 18px;">
+  <div>
+    <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.3em; color: #00f5ff;">05 · WORKFLOW</span>
+    <h2 style="font-family: 'Orbitron', sans-serif; font-size: 28px; letter-spacing: 0.06em; color: #e8e6ff; margin: 10px 0 6px;">So chattest du richtig mit Quantum</h2>
+    <p style="font-size: 15px; line-height: 1.6; color: #9a93c9; max-width: 640px; margin: 0;">Vier Gewohnheiten, mit denen du in Sekunden bessere Ergebnisse bekommst.</p>
+  </div>
+
+    <div style="display: flex; gap: 14px; padding: 14px 0; border-bottom: 1px solid rgba(157,77,255,0.15);">
+      <span style="font-family: 'Orbitron', sans-serif; font-size: 20px; font-weight: 900; color: #9d4dff; min-width: 34px;">1</span>
+      <div>
+        <div style="font-family: 'Orbitron', sans-serif; font-size: 14.5px; font-weight: 700; color: #e8e6ff;">Sei konkret</div>
+        <div style="font-size: 13.5px; color: #9a93c9; line-height: 1.55; margin-top: 4px;">Ziel, Ton und Format in einem Satz nennen — je klarer die Vorgabe, desto treffender das Ergebnis.</div>
+      </div>
+    </div>
+    <div style="display: flex; gap: 14px; padding: 14px 0; border-bottom: 1px solid rgba(157,77,255,0.15);">
+      <span style="font-family: 'Orbitron', sans-serif; font-size: 20px; font-weight: 900; color: #9d4dff; min-width: 34px;">2</span>
+      <div>
+        <div style="font-family: 'Orbitron', sans-serif; font-size: 14.5px; font-weight: 700; color: #e8e6ff;">Nutze /skill gezielt</div>
+        <div style="font-size: 13.5px; color: #9a93c9; line-height: 1.55; margin-top: 4px;">Für feste Aufgaben (rechnen, würfeln, zusammenfassen) direkt den passenden Skill aufrufen statt frei zu fragen.</div>
+      </div>
+    </div>
+    <div style="display: flex; gap: 14px; padding: 14px 0; border-bottom: 1px solid rgba(157,77,255,0.15);">
+      <span style="font-family: 'Orbitron', sans-serif; font-size: 20px; font-weight: 900; color: #9d4dff; min-width: 34px;">3</span>
+      <div>
+        <div style="font-family: 'Orbitron', sans-serif; font-size: 14.5px; font-weight: 700; color: #e8e6ff;">Automatisiere Wiederholungen</div>
+        <div style="font-size: 13.5px; color: #9a93c9; line-height: 1.55; margin-top: 4px;">Alles, was du dreimal manuell gemacht hast, verdient eine Automation.</div>
+      </div>
+    </div>
+    <div style="display: flex; gap: 14px; padding: 14px 0; border-bottom: 1px solid rgba(157,77,255,0.15);">
+      <span style="font-family: 'Orbitron', sans-serif; font-size: 20px; font-weight: 900; color: #9d4dff; min-width: 34px;">4</span>
+      <div>
+        <div style="font-family: 'Orbitron', sans-serif; font-size: 14.5px; font-weight: 700; color: #e8e6ff;">Wechsle bewusst das Studio</div>
+        <div style="font-size: 13.5px; color: #9a93c9; line-height: 1.55; margin-top: 4px;">Für Bild, Video, Sprache oder Spiele das passende Studio öffnen statt alles über den Chat zu erzwingen.</div>
+      </div>
+    </div>
+  <div style="margin-top: 6px; padding: 18px 20px; border-radius: 8px; background: rgba(57,255,20,0.04); border: 1px solid rgba(57,255,20,0.25);">
+    <div style="font-family: 'Orbitron', sans-serif; font-size: 13px; letter-spacing: 0.1em; color: #39ff14; margin-bottom: 6px;">🔑 ZUGANG</div>
+    <div style="font-size: 13.5px; line-height: 1.6; color: #9a93c9;">Ohne Zugangscode läuft Quantum im lokalen Demo-Modus (ohne Live-KI-Antworten). Mit Abo oder Code erhältst du vollen Zugang zu Chat, allen Skills sowie Bild-, Video- und Sprach-Studio.</div>
+  </div>
+</div>
+
+<!-- ══════════════════════ PAGE 9 — BONUS EXPERTEN-PROMPTS ══════════════════════ -->
+<div class="page" style="width: 210mm; min-height: 297mm; box-sizing: border-box; position: relative; overflow: hidden; background: radial-gradient(ellipse 55% 45% at 85% 6%, rgba(255,45,247,0.14), transparent 60%), radial-gradient(ellipse 55% 45% at 10% 100%, rgba(0,245,255,0.14), transparent 60%), #030014; padding: 26mm 22mm; display: flex; flex-direction: column; gap: 16px;">
+  <div>
+    <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.3em; color: #faff00;">06 · BONUS</span>
+    <h2 style="font-family: 'Orbitron', sans-serif; font-size: 30px; letter-spacing: 0.06em; background: linear-gradient(90deg, #faff00, #ff2df7); -webkit-background-clip: text; background-clip: text; color: transparent; margin: 10px 0 6px;">Experten-Prompts</h2>
+    <p style="font-size: 15px; line-height: 1.6; color: #9a93c9; max-width: 640px; margin: 0;">Zum direkten Kopieren in den Chat oder ins jeweilige Studio — formuliert, wie Power-User sie schreiben würden.</p>
+  </div>
+
+    <div style="break-inside: avoid;">
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+        <span style="font-size: 17px;">💬</span>
+        <span style="font-family: 'Orbitron', sans-serif; font-size: 14px; letter-spacing: 0.06em; color: #e8e6ff;">Chat</span>
+      </div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.55; color: #00f5ff; background: rgba(0,245,255,0.05); border: 1px solid rgba(0,245,255,0.18); border-radius: 6px; padding: 9px 12px; margin-bottom: 6px;">„Erkläre mir [Thema] in drei einfachen Sätzen, als würdest du es einem Einsteiger erklären.“</div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.55; color: #00f5ff; background: rgba(0,245,255,0.05); border: 1px solid rgba(0,245,255,0.18); border-radius: 6px; padding: 9px 12px; margin-bottom: 6px;">„Erstelle mir einen Wochenplan für [Ziel], mit täglich maximal 2 konkreten Aufgaben.“</div>
+    </div>
+    <div style="break-inside: avoid;">
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+        <span style="font-size: 17px;">🎨</span>
+        <span style="font-family: 'Orbitron', sans-serif; font-size: 14px; letter-spacing: 0.06em; color: #e8e6ff;">Bild-Studio</span>
+      </div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.55; color: #00f5ff; background: rgba(0,245,255,0.05); border: 1px solid rgba(0,245,255,0.18); border-radius: 6px; padding: 9px 12px; margin-bottom: 6px;">„Ein minimalistisches Produktfoto von [Produkt] auf dunklem Hintergrund, weiches Seitenlicht, Studioqualität.“</div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.55; color: #00f5ff; background: rgba(0,245,255,0.05); border: 1px solid rgba(0,245,255,0.18); border-radius: 6px; padding: 9px 12px; margin-bottom: 6px;">„Neon-Skyline bei Nacht im Cyberpunk-Stil, Regen auf der Straße, cyan und magenta Reflexionen.“</div>
+    </div>
+    <div style="break-inside: avoid;">
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+        <span style="font-size: 17px;">🎬</span>
+        <span style="font-family: 'Orbitron', sans-serif; font-size: 14px; letter-spacing: 0.06em; color: #e8e6ff;">Video-Studio</span>
+      </div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.55; color: #00f5ff; background: rgba(0,245,255,0.05); border: 1px solid rgba(0,245,255,0.18); border-radius: 6px; padding: 9px 12px; margin-bottom: 6px;">„Ein 15-Sekunden-Teaser für [Produkt]: Logo-Intro, drei Feature-Szenen, Call-to-Action am Ende.“</div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.55; color: #00f5ff; background: rgba(0,245,255,0.05); border: 1px solid rgba(0,245,255,0.18); border-radius: 6px; padding: 9px 12px; margin-bottom: 6px;">„Kurzes Erklärvideo, das in drei Szenen zeigt, wie [Prozess] funktioniert — ruhige Kamera, klare Textkarten.“</div>
+    </div>
+    <div style="break-inside: avoid;">
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+        <span style="font-size: 17px;">🔊</span>
+        <span style="font-family: 'Orbitron', sans-serif; font-size: 14px; letter-spacing: 0.06em; color: #e8e6ff;">TTS Studio</span>
+      </div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.55; color: #00f5ff; background: rgba(0,245,255,0.05); border: 1px solid rgba(0,245,255,0.18); border-radius: 6px; padding: 9px 12px; margin-bottom: 6px;">„Lies diesen Text ruhig und erzählerisch vor, wie ein Hörbuch-Sprecher, moderates Tempo.“</div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.55; color: #00f5ff; background: rgba(0,245,255,0.05); border: 1px solid rgba(0,245,255,0.18); border-radius: 6px; padding: 9px 12px; margin-bottom: 6px;">„Sprich diese Ansage energisch und werblich, wie ein Radio-Spot, mit kurzer Pause vor dem Call-to-Action.“</div>
+    </div>
+    <div style="break-inside: avoid;">
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+        <span style="font-size: 17px;">🎮</span>
+        <span style="font-family: 'Orbitron', sans-serif; font-size: 14px; letter-spacing: 0.06em; color: #e8e6ff;">Game Studio</span>
+      </div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.55; color: #00f5ff; background: rgba(0,245,255,0.05); border: 1px solid rgba(0,245,255,0.18); border-radius: 6px; padding: 9px 12px; margin-bottom: 6px;">„Ein einfaches Arcade-Game: Pfeiltasten steuern, Hindernissen ausweichen, Punktestand oben rechts.“</div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.55; color: #00f5ff; background: rgba(0,245,255,0.05); border: 1px solid rgba(0,245,255,0.18); border-radius: 6px; padding: 9px 12px; margin-bottom: 6px;">„Ein Quiz-Game mit 10 Fragen zu [Thema], Multiple Choice, Highscore am Ende.“</div>
+    </div>
+    <div style="break-inside: avoid;">
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+        <span style="font-size: 17px;">⟳</span>
+        <span style="font-family: 'Orbitron', sans-serif; font-size: 14px; letter-spacing: 0.06em; color: #e8e6ff;">Automationen</span>
+      </div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.55; color: #00f5ff; background: rgba(0,245,255,0.05); border: 1px solid rgba(0,245,255,0.18); border-radius: 6px; padding: 9px 12px; margin-bottom: 6px;">„Richte eine Automation ein, die mir jeden Morgen um 8 Uhr eine neue Projektidee vorschlägt.“</div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.55; color: #00f5ff; background: rgba(0,245,255,0.05); border: 1px solid rgba(0,245,255,0.18); border-radius: 6px; padding: 9px 12px; margin-bottom: 6px;">„Erstelle eine Automation, die reagiert, sobald ich „Rechnung“ schreibe, und mir eine Zusammenfassung anbietet.“</div>
+    </div>
+  <div style="margin-top: auto; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #9a93c9; letter-spacing: 0.15em; padding-top: 14px; border-top: 1px dashed rgba(157,77,255,0.3);">QUANTUM · DEIN AI WORKER · powered by NADJ.AI</div>
+</div>
+
+</div>
+</body>
+</html>
