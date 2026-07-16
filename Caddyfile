@@ -4,10 +4,6 @@
 
 :3000 {
 	root * .
-	@presenton path /presenton /presenton/
-	handle @presenton {
-		redir {env.PRESENTON_URL} 302
-	}
 	file_server {
 		hide .* diploi.yaml Dockerfile Dockerfile.dev README.md
 	}
