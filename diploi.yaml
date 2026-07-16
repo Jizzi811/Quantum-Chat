@@ -1,0 +1,29 @@
+# This file is used to build the infrastructure for a deployment.
+# After editing something here, apply the changes on the Diploi dashboard.
+# For more information, see https://diploi.com/yaml
+
+diploiVersion: v1.0
+components:
+  - name: Static Website
+    identifier: static
+    folder: /
+    package: https://github.com/diploi/component-static#v2
+    env:
+      include:
+        - value: ''
+          name: QUANTUM_ACCESS_TOKEN
+        - value: ''
+          name: GROQ_API_KEY
+        - value: ''
+          name: NVIDIA_API_KEY
+        - value: ''
+          name: GEMINI_API_KEY
+        - value: ''
+          name: OPENROUTER_API_KEY
+        - value: ''
+          name: STRIPE_SECRET_KEY
+        - value: ''
+          name: STRIPE_PRICE_ID
+        - value: ''
+          name: PRESENTON_URL
+addons: []
