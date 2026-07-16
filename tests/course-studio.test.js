@@ -40,3 +40,42 @@ test('slugify erzeugt sauberen Dateinamen', () => {
   assert.equal(CS.slugify('Excel für Anfänger!'), 'excel-für-anfänger');
   assert.equal(CS.slugify(''), 'kurs');
 });
+
+test('parseOutline normalisiert Module und Lektionen', () => {
+  const raw = JSON.stringify({
+    titel: 'Excel-Grundlagen', untertitel: 'Von 0 auf produktiv', beschreibung: 'Ein Kurs.',
+    lehrplan: ['Zellen', 'Formeln'],
+    module: [{ titel: 'Einstieg', kurzbeschreibung: 'Basis', lektionen: [
+      { titel: 'Die Oberfläche', lernziele: ['Menüband kennen', 'Zellen adressieren'] },
+    ] }],
+  });
+  const course = CS.parseOutline(raw, { thema: 'Excel', zielgruppe: 'Büro', niveau: 'Einsteiger', sprache: 'Deutsch', theme: 'neon' });
+  assert.equal(course.titel, 'Excel-Grundlagen');
+  assert.equal(course.zielgruppe, 'Büro');
+  assert.equal(course.sprache, 'Deutsch');
+  assert.equal(course.theme, 'neon');
+  assert.equal(course.module.length, 1);
+  assert.equal(course.module[0].lektionen[0].titel, 'Die Oberfläche');
+  assert.deepEqual(course.module[0].lektionen[0].lernziele, ['Menüband kennen', 'Zellen adressieren']);
+  // Leere Inhaltsfelder sind vorbereitet:
+  assert.equal(course.module[0].lektionen[0].inhalt, '');
+  assert.deepEqual(course.module[0].lektionen[0].quiz, []);
+});
+
+test('parseOutline akzeptiert englische Feldnamen (title/lessons/objectives)', () => {
+  const raw = JSON.stringify({ title: 'T', module: [{ title: 'M', lessons: [{ title: 'L', objectives: ['a'] }] }] });
+  const course = CS.parseOutline(raw, { sprache: 'Deutsch' });
+  assert.equal(course.module[0].titel, 'M');
+  assert.equal(course.module[0].lektionen[0].titel, 'L');
+  assert.deepEqual(course.module[0].lektionen[0].lernziele, ['a']);
+});
+
+test('parseOutline wirft, wenn kein Modul vorhanden ist', () => {
+  assert.throws(() => CS.parseOutline('{"titel":"X","module":[]}', {}), /kein Lehrplan/i);
+});
+
+test('parseOutline begrenzt auf maximal 12 Module', () => {
+  const module = Array.from({ length: 20 }, (_, i) => ({ titel: 'M' + i, lektionen: [{ titel: 'L' }] }));
+  const course = CS.parseOutline(JSON.stringify({ titel: 'X', module }), {});
+  assert.equal(course.module.length, 12);
+});
