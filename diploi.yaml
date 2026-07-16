@@ -26,28 +26,4 @@ components:
           name: STRIPE_PRICE_ID
         - value: ''
           name: PRESENTON_URL
-  - name: Static Website
-    identifier: presenton
-    folder: presenton
-    package: https://github.com/diploi/component-static#v2
-    env:
-      include:
-        - value: ''
-          name: LLM
-        - value: ''
-          name: OPENROUTER_API_KEY
-        - value: ''
-          name: OPENROUTER_MODEL
-        - value: ''
-          name: IMAGE_PROVIDER
-        - value: ''
-          name: PIXABAY_API_KEY
-        - value: 'false'
-          name: CAN_CHANGE_KEYS
-        - value: ''
-          name: AUTH_USERNAME
-        - value: ''
-          name: AUTH_PASSWORD
-        - value: 'true'
-          name: DISABLE_ANONYMOUS_TRACKING
 addons: []

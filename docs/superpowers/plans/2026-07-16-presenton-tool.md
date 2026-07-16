@@ -4,13 +4,13 @@
 
 **Goal:** Make the self-hosted Presenton editor available as a separate Quantum tool and Diploi component.
 
-**Architecture:** A `presenton` static component runs the official Presenton image on port 3000 with a persistent application-data volume provided by the component. The existing Caddy server redirects `/presenton` to the service endpoint configured through `PRESENTON_URL`; a new Quantum skill opens that stable local route in a separate tab.
+**Architecture:** Railway runs the official Presenton image with a persistent volume mounted at `/app_data`. The existing Caddy server redirects `/presenton` to the Railway endpoint configured through `PRESENTON_URL`; a new Quantum skill opens that stable local route in a separate tab.
 
 **Tech Stack:** Static HTML, browser JavaScript, Node.js built-in test runner, Caddy, Diploi, Presenton container image.
 
 ## Global Constraints
 
-- Keep Presenton and the current static Quantum application in separate containers.
+- Keep Presenton on Railway and the current static Quantum application on Diploi.
 - Store model keys and the shared Presenton login only in deployment environment variables.
 - Set `CAN_CHANGE_KEYS=false` and open Presenton in a new tab.
 - Do not change the existing game-agent timer behavior.
@@ -71,52 +71,42 @@ Run: `node --test tests/presentation.test.js tests/editor.test.js`
 
 Expected: PASS.
 
-### Task 2: Presenton Component and Redirect
+### Task 2: Presenton Railway Deployment and Redirect
 
 **Files:**
-- Create: `presenton/Dockerfile`
 - Modify: `diploi.yaml:6-27`
 - Modify: `Caddyfile:5-15`
 - Create: `PRESENTON_SETUP.md`
 
 **Interfaces:**
 - Consumes: the public Presenton endpoint from the `PRESENTON_URL` environment variable of the `static` component.
-- Produces: a `presenton` Diploi component listening on port 3000.
+- Produces: a `PRESENTON_URL` configuration value pointing to the Railway deployment.
 - Produces: `/presenton` redirect from Quantum to the configured endpoint.
 
 - [x] **Step 1: Add a configuration test for the component manifest**
 
-Add assertions to `tests/presentation.test.js` that read `diploi.yaml` and assert it contains `identifier: presenton`, `folder: presenton`, `name: CAN_CHANGE_KEYS`, and `name: AUTH_PASSWORD`.
+Add assertions to `tests/presentation.test.js` that read `diploi.yaml` and assert it contains `name: PRESENTON_URL` but no `identifier: presenton`. Assert that `PRESENTON_SETUP.md` requires Railway and `/app_data`.
 
 - [x] **Step 2: Run the test to verify it fails**
 
 Run: `node --test tests/presentation.test.js`
 
-Expected: FAIL because the Presenton component is not declared.
+Expected: FAIL because the Railway configuration is not documented.
 
 - [x] **Step 3: Add the Presenton image wrapper and deployment configuration**
 
-Use this Dockerfile:
-
-```dockerfile
-FROM ghcr.io/presenton/presenton:latest
-
-RUN sed -i 's/listen 80;/listen 3000;/' /etc/nginx/nginx.conf
-
-EXPOSE 3000
-```
-
-Add a second `Static Website` component with identifier and folder `presenton`. Declare these environment names for its deployment configuration: `LLM`, `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`, `IMAGE_PROVIDER`, `PIXABAY_API_KEY`, `CAN_CHANGE_KEYS`, `AUTH_USERNAME`, `AUTH_PASSWORD`, `DISABLE_ANONYMOUS_TRACKING`.
+Keep only `PRESENTON_URL` on the `static` component. Configure Presenton through the official Railway template, with port `80` and a persistent volume mounted at `/app_data`.
 
 Add this Caddy handler before `file_server`:
 
 ```caddyfile
-handle /presenton {
+@presenton path /presenton /presenton/
+handle @presenton {
   redir {env.PRESENTON_URL} 302
 }
 ```
 
-Document the required environment values in `PRESENTON_SETUP.md`, including configuring `PRESENTON_URL` on the `static` component to Presenton's public Diploi endpoint and `CAN_CHANGE_KEYS=false` on the `presenton` component.
+Document the Railway volume mount, its Presenton environment values, and configuring `PRESENTON_URL` on the `static` component with the Railway domain.
 
 - [x] **Step 4: Run the focused configuration tests**
 

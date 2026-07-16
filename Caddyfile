@@ -4,7 +4,8 @@
 
 :3000 {
 	root * .
-	handle /presenton {
+	@presenton path /presenton /presenton/
+	handle @presenton {
 		redir {env.PRESENTON_URL} 302
 	}
 	file_server {

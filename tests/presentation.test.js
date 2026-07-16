@@ -27,16 +27,21 @@ test('Skill „praesentation" erklärt den Presenton-Link', () => {
   assert.match(output, /\/presenton/);
 });
 
-test('Diploi konfiguriert Presenton als eigenen geschützten Service', () => {
+test('Diploi konfiguriert nur die externe Presenton-URL', () => {
   const manifest = fs.readFileSync(path.join(__dirname, '../diploi.yaml'), 'utf8');
-  assert.match(manifest, /identifier: presenton/);
-  assert.match(manifest, /folder: presenton/);
-  assert.match(manifest, /name: CAN_CHANGE_KEYS/);
-  assert.match(manifest, /name: AUTH_PASSWORD/);
+  assert.match(manifest, /name: PRESENTON_URL/);
+  assert.doesNotMatch(manifest, /identifier: presenton/);
+});
+
+test('Setup verlangt ein Railway-Volume auf Presentons Datenpfad', () => {
+  const setup = fs.readFileSync(path.join(__dirname, '../PRESENTON_SETUP.md'), 'utf8');
+  assert.match(setup, /Railway/);
+  assert.match(setup, /\/app_data/);
 });
 
 test('Caddy leitet den lokalen Presenton-Link an die Service-URL weiter', () => {
   const caddyfile = fs.readFileSync(path.join(__dirname, '../Caddyfile'), 'utf8');
-  assert.match(caddyfile, /handle \/presenton/);
+  assert.match(caddyfile, /@presenton path \/presenton \/presenton\//);
+  assert.match(caddyfile, /handle @presenton/);
   assert.match(caddyfile, /redir \{env\.PRESENTON_URL\} 302/);
 });

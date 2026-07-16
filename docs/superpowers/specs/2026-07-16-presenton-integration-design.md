@@ -7,12 +7,11 @@ Werkzeug fuer Personen mit einem Quantum-Zugangscode bereit.
 
 ## Architektur
 
-- Presenton wird als eigener Diploi-Service mit eigener oeffentlicher URL
-  betrieben; die bestehende statische Quantum-App bleibt unveraendert
-  getrennt.
-- Der Service verwendet das offizielle Presenton-Container-Image und einen
-  persistenten Speicher fuer Entwuerfe, hochgeladene Dateien und PPTX/PDF-
-  Exporte.
+- Presenton wird als eigener Railway-Service mit eigener oeffentlicher URL
+  betrieben; die bestehende statische Quantum-App auf Diploi bleibt getrennt.
+- Der Railway-Service verwendet das offizielle Presenton-Container-Image und
+  ein Volume auf `/app_data` fuer Entwuerfe, hochgeladene Dateien und
+  PPTX/PDF-Exporte.
 - Presenton nutzt einen vorhandenen Modellanbieter fuer Folientexte
   (Gemini oder OpenRouter) und kann kostenlose Stockbilder von Pexels oder
   Pixabay verwenden.
