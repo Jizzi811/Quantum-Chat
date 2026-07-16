@@ -25,7 +25,7 @@ Werkzeug fuer Personen mit einem Quantum-Zugangscode bereit.
 
 - Presenton steht unter der Apache-2.0-Lizenz und darf kommerziell verwendet
   werden.
-- Kosten entstehen nur durch den zusaetzlichen Diploi-Service und optionale
+- Kosten entstehen durch den zusaetzlichen Railway-Service und optionale
   Modell- oder Bildanbieter-APIs.
 - Der Dienst deaktiviert die Aenderung von Anbieter-Keys in der Presenton-
   Oberflaeche, damit Nutzer keine Infrastruktur-Konfiguration einsehen oder
