@@ -1,4 +1,4 @@
-# Stripe-Abo einrichten (11,99 €/Monat)
+# Stripe-Abo einrichten (16,99 €/Monat)
 
 Die Verkaufsseite nutzt **Stripe Checkout** im Abo-Modus (Karte + SEPA-Lastschrift).
 Die Function `netlify/functions/checkout.js` erstellt die Checkout-Session und leitet
@@ -7,7 +7,7 @@ Quantum selbst eingegeben.**
 
 ## 1. Preis in Stripe anlegen
 1. In [dashboard.stripe.com](https://dashboard.stripe.com) → **Produkte** ein Produkt „Quantum" anlegen.
-2. Einen **wiederkehrenden Preis** hinzufügen: **11,99 € / Monat**.
+2. Einen **wiederkehrenden Preis** hinzufügen: **16,99 € / Monat**.
 3. Die **Preis-ID** kopieren (Format `price_…`).
 
 ## 2. Netlify-Umgebungsvariablen setzen

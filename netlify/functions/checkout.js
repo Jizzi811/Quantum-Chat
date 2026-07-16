@@ -1,12 +1,12 @@
 /* ═══════════════════════════════════════════════════════════════
-   QUANTUM — Stripe Checkout (Abo 11,99 €/Monat)
+   QUANTUM — Stripe Checkout (Abo 16,99 €/Monat)
    Erzeugt eine Stripe-Checkout-Session im Subscription-Modus für
    Karten- und SEPA-Lastschrift-Zahlung. Spricht die Stripe-REST-API
    direkt per fetch an — keine zusätzliche Abhängigkeit nötig.
 
    Benötigte Netlify-Umgebungsvariablen:
    - STRIPE_SECRET_KEY   (Pflicht)  z. B. sk_live_… / sk_test_…
-   - STRIPE_PRICE_ID     (Pflicht)  Preis-ID des 11,99 €/Monat-Abos (price_…)
+   - STRIPE_PRICE_ID     (Pflicht)  Preis-ID des 16,99 €/Monat-Abos (price_…)
    Optional:
    - STRIPE_PAYMENT_METHODS   Komma-Liste, Default "card,sepa_debit"
                               (z. B. "card,sepa_debit,paypal", sobald in
