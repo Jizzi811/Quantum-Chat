@@ -214,3 +214,11 @@ test('buildStandaloneHtml markiert die richtige Quiz-Antwort per data-correct', 
   // Option B (Index 1) ist korrekt:
   assert.match(html, /data-correct="1"[^>]*>\s*B/);
 });
+
+test('buildPrintHtml erzeugt druckbare Seite mit Seitenumbruch und markierter Lösung', () => {
+  const html = CS.buildPrintHtml(sampleCourse());
+  assert.match(html, /^<!doctype html>/i);
+  assert.match(html, /page-break-before/);
+  assert.match(html, /<strong>B ✓<\/strong>/);   // richtige Antwort markiert
+  assert.match(html, /print\(\)/);                // Auto-Druck
+});

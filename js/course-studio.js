@@ -335,6 +335,57 @@ window.Quantum = window.Quantum || {};
       + header + '<div class="wrap"><nav class="toc">' + toc + '</nav><main>' + body + '</main></div>' + STANDALONE_SCRIPT + '</body></html>';
   }
 
+  function buildPrintHtml(course) {
+    var body = '';
+    if (course.lehrplan.length) {
+      body += '<section class="pmod pmod--first"><h2>Lehrplan</h2><ul>' + course.lehrplan.map(function (p) { return '<li>' + escapeHtml(p) + '</li>'; }).join('') + '</ul></section>';
+    }
+    course.module.forEach(function (m, mi) {
+      body += '<section class="pmod"><h2>' + (mi + 1) + '. ' + escapeHtml(m.titel) + '</h2>';
+      if (m.kurzbeschreibung) body += '<p>' + escapeHtml(m.kurzbeschreibung) + '</p>';
+      m.lektionen.forEach(function (l, li) {
+        body += '<h3>' + (mi + 1) + '.' + (li + 1) + ' ' + escapeHtml(l.titel) + '</h3>';
+        if (l.lernziele.length) body += '<ul>' + l.lernziele.map(function (z) { return '<li>' + escapeHtml(z) + '</li>'; }).join('') + '</ul>';
+        if (l.bild) body += '<img src="' + l.bild + '" alt="' + escapeHtml(l.titel) + '">';
+        if (l.inhalt) body += '<div>' + mdToHtml(l.inhalt) + '</div>';
+        if (l.zusammenfassung) body += '<p class="psum"><strong>Zusammenfassung:</strong> ' + escapeHtml(l.zusammenfassung) + '</p>';
+        l.quiz.forEach(function (q, qi) {
+          body += '<p class="pq">' + (qi + 1) + '. ' + escapeHtml(q.frage) + '</p><ul>';
+          q.optionen.forEach(function (o, oi) {
+            body += '<li>' + (oi === q.loesungIndex ? '<strong>' + escapeHtml(o) + ' ✓</strong>' : escapeHtml(o)) + '</li>';
+          });
+          body += '</ul>';
+          if (q.erklaerung) body += '<p class="pexp"><em>' + escapeHtml(q.erklaerung) + '</em></p>';
+        });
+        l.uebungen.forEach(function (u, ui) {
+          body += '<p class="pex"><strong>Übung ' + (ui + 1) + ':</strong> ' + escapeHtml(u.aufgabe) + '</p>';
+          if (u.loesung) body += '<p class="pexs"><em>Lösung:</em> ' + escapeHtml(u.loesung) + '</p>';
+        });
+      });
+      body += '</section>';
+    });
+    if (course.glossar.length) {
+      body += '<section class="pmod"><h2>Glossar</h2><dl>' + course.glossar.map(function (g) {
+        return '<dt><strong>' + escapeHtml(g.begriff) + '</strong></dt><dd>' + escapeHtml(g.definition) + '</dd>';
+      }).join('') + '</dl></section>';
+    }
+    if (course.ressourcen.length) {
+      body += '<section class="pmod"><h2>Ressourcen</h2><ul>' + course.ressourcen.map(function (r) {
+        return '<li><strong>' + escapeHtml(r.label) + '</strong>' + (r.notiz ? ' — ' + escapeHtml(r.notiz) : '') + '</li>';
+      }).join('') + '</ul></section>';
+    }
+    var css = '@page{margin:2cm}*{box-sizing:border-box}body{font-family:Georgia,serif;color:#111;line-height:1.5;max-width:800px;margin:0 auto}'
+      + 'h1{font-size:26pt;margin:0 0 .2rem}.lead{color:#555;margin:0 0 1.5rem}'
+      + '.pmod h2{font-size:18pt;page-break-before:always;border-bottom:1px solid #999;padding-bottom:.2rem}.pmod--first h2{page-break-before:avoid}'
+      + 'h3{font-size:14pt;margin-top:1rem}img{max-width:100%}.psum{border-left:3px solid #999;padding-left:.6rem;color:#333}'
+      + '.pq{font-weight:bold;margin-bottom:.2rem}.pexp{color:#555;margin-top:0}.pex{margin-bottom:.1rem}.pexs{color:#333;margin-top:0}'
+      + 'h3,.pq,.pex,img{page-break-inside:avoid}';
+    return '<!doctype html><html lang="de"><head><meta charset="utf-8"><title>' + escapeHtml(course.titel) + '</title><style>' + css + '</style></head><body>'
+      + '<h1>' + escapeHtml(course.titel) + '</h1>' + (course.untertitel ? '<p class="lead">' + escapeHtml(course.untertitel) + '</p>' : '')
+      + (course.beschreibung ? '<p>' + escapeHtml(course.beschreibung) + '</p>' : '') + body
+      + '<scr' + 'ipt>onload=function(){setTimeout(function(){print()},300)}</scr' + 'ipt></body></html>';
+  }
+
   /* ── Öffentliche Schnittstelle (wächst über die weiteren Tasks) ── */
   window.Quantum.courseStudio = {
     escapeHtml: escapeHtml,
@@ -356,5 +407,6 @@ window.Quantum = window.Quantum || {};
     buildMarkdown: buildMarkdown,
     quizHtml: quizHtml,
     buildStandaloneHtml: buildStandaloneHtml,
+    buildPrintHtml: buildPrintHtml,
   };
 })();
