@@ -72,11 +72,42 @@ window.Quantum = window.Quantum || {};
     };
   }
 
+  function parseLesson(text) {
+    var data = cleanJson(text);
+    return {
+      inhalt: str(data.inhalt || data.content, 8000),
+      zusammenfassung: str(data.zusammenfassung || data.summary, 800),
+      quiz: arr(data.quiz).map(function (q) {
+        var optionen = arr(q.optionen || q.options).slice(0, 6).map(function (o) { return str(o, 300); }).filter(Boolean);
+        var idx = parseInt(q.loesungIndex != null ? q.loesungIndex : q.answerIndex, 10);
+        if (isNaN(idx) || idx < 0 || idx >= optionen.length) idx = 0;
+        return { frage: str(q.frage || q.question, 400), optionen: optionen, loesungIndex: idx, erklaerung: str(q.erklaerung || q.explanation, 500) };
+      }).filter(function (q) { return q.frage && q.optionen.length >= 2; }).slice(0, 8),
+      uebungen: arr(data.uebungen || data.exercises).map(function (u) {
+        return { aufgabe: str(u.aufgabe || u.task, 500), tipp: str(u.tipp || u.hint, 300), loesung: str(u.loesung || u.solution, 800) };
+      }).filter(function (u) { return u.aufgabe; }).slice(0, 6),
+    };
+  }
+
+  function parseExtras(text) {
+    var data = cleanJson(text);
+    return {
+      glossar: arr(data.glossar || data.glossary).map(function (g) {
+        return { begriff: str(g.begriff || g.term, 120), definition: str(g.definition, 500) };
+      }).filter(function (g) { return g.begriff && g.definition; }).slice(0, 40),
+      ressourcen: arr(data.ressourcen || data.resources).map(function (r) {
+        return { label: str(r.label, 200), notiz: str(r.notiz || r.note, 300) };
+      }).filter(function (r) { return r.label; }).slice(0, 30),
+    };
+  }
+
   /* ── Öffentliche Schnittstelle (wächst über die weiteren Tasks) ── */
   window.Quantum.courseStudio = {
     escapeHtml: escapeHtml,
     cleanJson: cleanJson,
     slugify: slugify,
     parseOutline: parseOutline,
+    parseLesson: parseLesson,
+    parseExtras: parseExtras,
   };
 })();

@@ -79,3 +79,51 @@ test('parseOutline begrenzt auf maximal 12 Module', () => {
   const course = CS.parseOutline(JSON.stringify({ titel: 'X', module }), {});
   assert.equal(course.module.length, 12);
 });
+
+test('parseLesson normalisiert Inhalt, Quiz und Übungen', () => {
+  const raw = JSON.stringify({
+    inhalt: 'Erklärtext', zusammenfassung: 'Kurz',
+    quiz: [{ frage: 'Was ist 2+2?', optionen: ['3', '4', '5'], loesungIndex: 1, erklaerung: 'Addition' }],
+    uebungen: [{ aufgabe: 'Rechne 3+3', tipp: 'zähle', loesung: '6' }],
+  });
+  const l = CS.parseLesson(raw);
+  assert.equal(l.inhalt, 'Erklärtext');
+  assert.equal(l.quiz.length, 1);
+  assert.equal(l.quiz[0].loesungIndex, 1);
+  assert.equal(l.uebungen[0].aufgabe, 'Rechne 3+3');
+});
+
+test('parseLesson wirft ungültige Quizfragen (< 2 Optionen) heraus und korrigiert loesungIndex', () => {
+  const raw = JSON.stringify({
+    inhalt: 'x',
+    quiz: [
+      { frage: 'nur eine Option', optionen: ['a'], loesungIndex: 0 },
+      { frage: 'gut', optionen: ['a', 'b'], loesungIndex: 9 },
+    ],
+  });
+  const l = CS.parseLesson(raw);
+  assert.equal(l.quiz.length, 1);
+  assert.equal(l.quiz[0].frage, 'gut');
+  assert.equal(l.quiz[0].loesungIndex, 0); // 9 war ungültig → 0
+});
+
+test('parseLesson akzeptiert englische Feldnamen', () => {
+  const raw = JSON.stringify({ content: 'c', summary: 's', quiz: [{ question: 'q', options: ['a', 'b'], answerIndex: 1, explanation: 'e' }], exercises: [{ task: 't' }] });
+  const l = CS.parseLesson(raw);
+  assert.equal(l.inhalt, 'c');
+  assert.equal(l.quiz[0].frage, 'q');
+  assert.equal(l.quiz[0].loesungIndex, 1);
+  assert.equal(l.uebungen[0].aufgabe, 't');
+});
+
+test('parseExtras normalisiert Glossar und Ressourcen', () => {
+  const raw = JSON.stringify({
+    glossar: [{ begriff: 'Zelle', definition: 'Kästchen' }, { begriff: '', definition: 'leer' }],
+    ressourcen: [{ label: 'Buch', notiz: 'Kap. 1' }, { notiz: 'kein Label' }],
+  });
+  const ex = CS.parseExtras(raw);
+  assert.equal(ex.glossar.length, 1);
+  assert.equal(ex.glossar[0].begriff, 'Zelle');
+  assert.equal(ex.ressourcen.length, 1);
+  assert.equal(ex.ressourcen[0].label, 'Buch');
+});
