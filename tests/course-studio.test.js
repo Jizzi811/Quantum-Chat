@@ -5,9 +5,10 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 // Browser-Umgebung für das IIFE in js/course-studio.js nachbilden.
+const registeredSkills = {};
 global.window = global;
 global.Quantum = {
-  skills: { register() {} },
+  skills: { register(def) { registeredSkills[def.id] = def; } },
   ai: {},
   imageStudio: {},
 };
@@ -310,4 +311,13 @@ test('elaborateCourse bricht bei shouldCancel ab', async () => {
   Quantum.ai.askStream = async () => ({ text: '{"inhalt":"t","uebungen":[]}', model: 'm' });
   const result = await CS.elaborateCourse(course, { quiz: false, bilder: false }, { shouldCancel: () => true });
   assert.equal(result.cancelled, true);
+});
+
+test('Skill "kurs" ist registriert und die reine API ist exportiert', () => {
+  // skills.register wird im Test-Harness gesammelt:
+  assert.ok(registeredSkills.kurs, 'Skill kurs registriert');
+  assert.equal(registeredSkills.kurs.icon, '🎓');
+  assert.equal(typeof CS.open, 'function');
+  assert.equal(typeof CS.close, 'function');
+  assert.equal(typeof CS.buildStandaloneHtml, 'function');
 });

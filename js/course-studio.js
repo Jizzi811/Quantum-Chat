@@ -495,6 +495,237 @@ window.Quantum = window.Quantum || {};
     return { errors: errors, cancelled: false };
   }
 
+  /* ── Modal-UI ──────────────────────────────────────────────── */
+
+  var modal = null;
+  var state = { course: null, params: null, cancel: false };
+
+  function setStatus(text, kind) {
+    var el = modal.querySelector('.tts-studio__status');
+    el.textContent = text || '';
+    el.className = 'tts-studio__status' + (kind ? ' tts-studio__status--' + kind : '');
+  }
+
+  function showPanel(name) {
+    ['setup', 'review', 'result'].forEach(function (p) {
+      var sec = modal.querySelector('[data-panel="' + p + '"]');
+      if (sec) sec.hidden = (p !== name);
+    });
+  }
+
+  function collectParams() {
+    var q = function (sel) { return modal.querySelector(sel); };
+    return {
+      thema: q('#course-topic').value.trim(),
+      quelle: q('#course-source').value.trim(),
+      zielgruppe: q('#course-audience').value.trim(),
+      niveau: q('#course-level').value,
+      sprache: q('#course-lang').value.trim() || 'Deutsch',
+      theme: q('#course-theme').value,
+      moduleCount: parseInt(q('#course-modules').value, 10) || 4,
+      lessonsPerModule: parseInt(q('#course-lessons').value, 10) || 3,
+      quiz: q('#course-quiz').checked,
+      bilder: q('#course-images').checked,
+    };
+  }
+
+  function renderOutlineEditor() {
+    var c = state.course;
+    var html = '<input class="course-edit__title" id="course-edit-title" value="' + escapeHtml(c.titel) + '">';
+    c.module.forEach(function (m, mi) {
+      html += '<div class="course-mod" data-mi="' + mi + '"><input class="course-mod__title" data-mi="' + mi + '" value="' + escapeHtml(m.titel) + '">'
+        + '<button type="button" class="course-x" data-act="del-mod" data-mi="' + mi + '" title="Modul löschen">✕</button><ul class="course-les">';
+      m.lektionen.forEach(function (l, li) {
+        html += '<li><input class="course-les__title" data-mi="' + mi + '" data-li="' + li + '" value="' + escapeHtml(l.titel) + '">'
+          + '<button type="button" class="course-x" data-act="up" data-mi="' + mi + '" data-li="' + li + '" title="hoch">↑</button>'
+          + '<button type="button" class="course-x" data-act="down" data-mi="' + mi + '" data-li="' + li + '" title="runter">↓</button>'
+          + '<button type="button" class="course-x" data-act="del-les" data-mi="' + mi + '" data-li="' + li + '" title="Lektion löschen">✕</button></li>';
+      });
+      html += '</ul><button type="button" class="course-add" data-act="add-les" data-mi="' + mi + '">+ Lektion</button></div>';
+    });
+    html += '<button type="button" class="course-add" data-act="add-mod">+ Modul</button>';
+    modal.querySelector('.course-outline').innerHTML = html;
+  }
+
+  function syncOutlineFromEditor() {
+    var c = state.course;
+    var t = modal.querySelector('#course-edit-title');
+    if (t) c.titel = t.value.trim() || c.titel;
+    modal.querySelectorAll('.course-mod__title').forEach(function (inp) {
+      c.module[+inp.dataset.mi].titel = inp.value.trim() || 'Modul';
+    });
+    modal.querySelectorAll('.course-les__title').forEach(function (inp) {
+      c.module[+inp.dataset.mi].lektionen[+inp.dataset.li].titel = inp.value.trim() || 'Lektion';
+    });
+  }
+
+  function emptyLesson(titel) {
+    return { titel: titel, lernziele: [], inhalt: '', zusammenfassung: '', bild: '', bildPrompt: '', quiz: [], uebungen: [] };
+  }
+
+  function onOutlineClick(e) {
+    var btn = e.target.closest('[data-act]');
+    if (!btn) return;
+    syncOutlineFromEditor();
+    var c = state.course, mi = +btn.dataset.mi, li = +btn.dataset.li, act = btn.dataset.act;
+    if (act === 'add-mod') c.module.push({ titel: 'Neues Modul', kurzbeschreibung: '', lektionen: [emptyLesson('Neue Lektion')] });
+    else if (act === 'del-mod') c.module.splice(mi, 1);
+    else if (act === 'add-les') c.module[mi].lektionen.push(emptyLesson('Neue Lektion'));
+    else if (act === 'del-les') c.module[mi].lektionen.splice(li, 1);
+    else if (act === 'up' && li > 0) c.module[mi].lektionen.splice(li - 1, 0, c.module[mi].lektionen.splice(li, 1)[0]);
+    else if (act === 'down' && li < c.module[mi].lektionen.length - 1) c.module[mi].lektionen.splice(li + 1, 0, c.module[mi].lektionen.splice(li, 1)[0]);
+    if (!c.module.length) c.module.push({ titel: 'Modul', kurzbeschreibung: '', lektionen: [emptyLesson('Lektion')] });
+    renderOutlineEditor();
+  }
+
+  async function onGenerateOutline() {
+    var params = collectParams();
+    if (!params.thema) { setStatus('Bitte zuerst ein Thema eingeben.', 'error'); return; }
+    if (!window.Quantum.ai || !window.Quantum.ai.hasAccess || !window.Quantum.ai.hasAccess()) {
+      // hasAccess ist optional; wenn nicht vorhanden, einfach weiter versuchen
+    }
+    state.params = params;
+    var btn = modal.querySelector('.course-gen-outline');
+    btn.disabled = true;
+    setStatus('Lehrplan wird generiert …');
+    try {
+      state.course = await generateOutline(params);
+      renderOutlineEditor();
+      showPanel('review');
+      setStatus('');
+    } catch (e) {
+      setStatus('⚠ ' + (e.message || 'Lehrplan-Generierung fehlgeschlagen.'), 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function onElaborate() {
+    syncOutlineFromEditor();
+    state.cancel = false;
+    var btn = modal.querySelector('.course-elaborate');
+    var cancelBtn = modal.querySelector('.course-cancel');
+    var bar = modal.querySelector('.course-progress__bar');
+    var lbl = modal.querySelector('.course-progress__label');
+    modal.querySelector('.course-progress').hidden = false;
+    btn.disabled = true; cancelBtn.hidden = false;
+    try {
+      var result = await elaborateCourse(state.course, state.params, {
+        onProgress: function (label, done, total) {
+          lbl.textContent = label;
+          bar.style.width = total ? Math.round((done / total) * 100) + '%' : '0%';
+        },
+        shouldCancel: function () { return state.cancel; },
+      });
+      if (result.cancelled) { setStatus('Abgebrochen. Bereits erzeugte Inhalte bleiben erhalten.', 'error'); }
+      else if (result.errors.length) { setStatus('Fertig — mit ' + result.errors.length + ' Hinweis(en): ' + result.errors.slice(0, 3).join(' | '), 'error'); }
+      renderPreview();
+      showPanel('result');
+    } catch (e) {
+      setStatus('⚠ ' + (e.message || 'Ausarbeitung fehlgeschlagen.'), 'error');
+    } finally {
+      btn.disabled = false; cancelBtn.hidden = true;
+      modal.querySelector('.course-progress').hidden = true;
+    }
+  }
+
+  function renderPreview() {
+    modal.querySelector('.course-preview').innerHTML = buildStandaloneHtml(state.course)
+      .replace(/^[\s\S]*<body>/, '').replace(/<\/body>[\s\S]*$/, '');
+  }
+
+  function downloadBlob(content, filename, type) {
+    var blob = new Blob([content], { type: type });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  function onExportHtml() { downloadBlob(buildStandaloneHtml(state.course), slugify(state.course.titel) + '-kurs.html', 'text/html'); }
+  function onExportMd() { downloadBlob(buildMarkdown(state.course), slugify(state.course.titel) + '-kurs.md', 'text/markdown'); }
+  function onExportPdf() {
+    var win = window.open('', '_blank');
+    if (!win) { setStatus('Popup blockiert. Bitte Popups für den PDF-Export erlauben.', 'error'); return; }
+    win.document.write(buildPrintHtml(state.course));
+    win.document.close();
+  }
+
+  function buildModal() {
+    modal = document.createElement('div');
+    modal.className = 'tts-studio course-studio';
+    modal.hidden = true;
+    modal.innerHTML =
+      '<div class="tts-studio__card course-studio__card">'
+      + '<div class="tts-studio__head"><span class="tts-studio__title">🎓 KURS-STUDIO</span><button class="tts-studio__close" title="Schließen">✕</button></div>'
+      // Panel 1: Setup
+      + '<section data-panel="setup">'
+      + '<label class="tts-studio__label" for="course-topic">Thema</label>'
+      + '<textarea id="course-topic" class="tts-studio__text" rows="2" maxlength="600" placeholder="z. B. Excel für Einsteiger"></textarea>'
+      + '<label class="tts-studio__label" for="course-source">Quellmaterial (optional)</label>'
+      + '<textarea id="course-source" class="tts-studio__text" rows="3" maxlength="12000" placeholder="Eigene Texte hier einfügen …"></textarea>'
+      + '<button type="button" class="course-import">📎 Aus angehängten Dateien übernehmen</button>'
+      + '<div class="course-fields">'
+      + '<label>Zielgruppe<input id="course-audience" class="tts-studio__input" placeholder="z. B. Büroangestellte"></label>'
+      + '<label>Niveau<select id="course-level" class="tts-studio__input"><option>Einsteiger</option><option>Fortgeschritten</option><option>Profi</option></select></label>'
+      + '<label>Sprache<input id="course-lang" class="tts-studio__input" value="Deutsch"></label>'
+      + '<label>Design<select id="course-theme" class="tts-studio__input"><option value="neon">Quantum Neon</option><option value="business">Gold Business</option><option value="light">Clean Light</option></select></label>'
+      + '<label>Module<input id="course-modules" class="tts-studio__input" type="number" min="1" max="12" value="4"></label>'
+      + '<label>Lektionen/Modul<input id="course-lessons" class="tts-studio__input" type="number" min="1" max="10" value="3"></label>'
+      + '</div>'
+      + '<div class="course-checks"><label><input type="checkbox" id="course-quiz" checked> Quizzes &amp; Übungen</label>'
+      + '<label><input type="checkbox" id="course-images"> Bilder generieren</label></div>'
+      + '<button class="tts-studio__generate course-gen-outline">📋 LEHRPLAN GENERIEREN</button>'
+      + '</section>'
+      // Panel 2: Review
+      + '<section data-panel="review" hidden>'
+      + '<p class="course-hint">Prüfe und bearbeite die Struktur, dann arbeite den Kurs aus.</p>'
+      + '<div class="course-outline"></div>'
+      + '<div class="course-progress" hidden><div class="course-progress__track"><div class="course-progress__bar"></div></div><span class="course-progress__label"></span></div>'
+      + '<div class="course-actions"><button class="tts-studio__generate course-elaborate">✍️ KURS AUSARBEITEN</button>'
+      + '<button class="course-cancel" hidden>Abbrechen</button>'
+      + '<button class="course-back" data-goto="setup">← Zurück</button></div>'
+      + '</section>'
+      // Panel 3: Result
+      + '<section data-panel="result" hidden>'
+      + '<div class="course-exports"><button class="course-exp-html">⬇ HTML-Kurs</button><button class="course-exp-pdf">⬇ PDF</button><button class="course-exp-md">⬇ Markdown</button>'
+      + '<button class="course-back" data-goto="review">← Struktur</button></div>'
+      + '<div class="course-preview"></div>'
+      + '</section>'
+      + '<div class="tts-studio__status" aria-live="polite"></div>'
+      + '</div>';
+    document.body.appendChild(modal);
+
+    modal.querySelector('.tts-studio__close').onclick = close;
+    modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+    modal.querySelector('.course-gen-outline').onclick = onGenerateOutline;
+    modal.querySelector('.course-outline').addEventListener('click', onOutlineClick);
+    modal.querySelector('.course-elaborate').onclick = onElaborate;
+    modal.querySelector('.course-cancel').onclick = function () { state.cancel = true; };
+    modal.querySelector('.course-exp-html').onclick = onExportHtml;
+    modal.querySelector('.course-exp-pdf').onclick = onExportPdf;
+    modal.querySelector('.course-exp-md').onclick = onExportMd;
+    modal.querySelector('.course-import').onclick = function () {
+      var ctx = (window.Quantum.uploads && window.Quantum.uploads.getContext) ? window.Quantum.uploads.getContext() : '';
+      if (!ctx) { setStatus('Keine Text-Anhänge gefunden. Hänge oben über 📎 eine Datei an.', 'error'); return; }
+      var field = modal.querySelector('#course-source');
+      field.value = (field.value ? field.value + '\n\n' : '') + ctx;
+      setStatus('Angehängtes Material übernommen.', 'ok');
+    };
+    modal.querySelectorAll('.course-back').forEach(function (b) { b.onclick = function () { showPanel(b.dataset.goto); }; });
+  }
+
+  function open(thema) {
+    if (!modal) buildModal();
+    modal.hidden = false;
+    showPanel('setup');
+    if (thema) modal.querySelector('#course-topic').value = thema;
+    modal.querySelector('#course-topic').focus();
+  }
+
+  function close() { if (modal) modal.hidden = true; }
+
   /* ── Öffentliche Schnittstelle (wächst über die weiteren Tasks) ── */
   window.Quantum.courseStudio = {
     escapeHtml: escapeHtml,
@@ -519,5 +750,17 @@ window.Quantum = window.Quantum || {};
     buildPrintHtml: buildPrintHtml,
     generateOutline: generateOutline,
     elaborateCourse: elaborateCourse,
+    open: open,
+    close: close,
   };
+
+  if (window.Quantum.skills) window.Quantum.skills.register({
+    id: 'kurs', icon: '🎓', name: 'Kurs-Studio',
+    desc: 'Generiert komplette Online-Kurse (Module, Lektionen, Quizzes, Bilder) und exportiert HTML, PDF & Markdown',
+    usage: '/skill kurs <thema>',
+    run: function (input) {
+      open((input || '').trim());
+      return '🎓 **KURS-STUDIO** geöffnet. Gib dein Thema ein, generiere den Lehrplan, arbeite den Kurs aus und exportiere ihn als HTML, PDF oder Markdown.';
+    },
+  });
 })();
