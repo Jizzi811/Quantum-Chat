@@ -24,6 +24,4 @@ components:
           name: STRIPE_SECRET_KEY
         - value: ''
           name: STRIPE_PRICE_ID
-        - value: ''
-          name: PRESENTON_URL
 addons: []
