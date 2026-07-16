@@ -181,6 +181,79 @@ window.Quantum = window.Quantum || {};
       + themeStyle(course.theme) + 'Ohne Text im Bild.';
   }
 
+  function mdToHtml(md) {
+    var esc = escapeHtml(md).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    var blocks = esc.split(/\n{2,}/);
+    return blocks.map(function (block) {
+      var lines = block.split('\n');
+      if (lines.length && lines.every(function (ln) { return /^\s*[-*]\s+/.test(ln); })) {
+        return '<ul>' + lines.map(function (ln) { return '<li>' + ln.replace(/^\s*[-*]\s+/, '') + '</li>'; }).join('') + '</ul>';
+      }
+      if (lines.length === 1 && /^#{1,4}\s+/.test(lines[0])) {
+        var level = Math.min(lines[0].match(/^#+/)[0].length + 2, 6);
+        return '<h' + level + '>' + lines[0].replace(/^#+\s+/, '') + '</h' + level + '>';
+      }
+      return '<p>' + lines.join('<br>') + '</p>';
+    }).join('');
+  }
+
+  function buildMarkdown(course) {
+    var out = [];
+    out.push('# ' + course.titel);
+    if (course.untertitel) out.push('*' + course.untertitel + '*');
+    if (course.beschreibung) out.push('\n' + course.beschreibung);
+    var meta = [];
+    if (course.zielgruppe) meta.push('**Zielgruppe:** ' + course.zielgruppe);
+    if (course.niveau) meta.push('**Niveau:** ' + course.niveau);
+    if (meta.length) out.push('\n' + meta.join(' · '));
+    if (course.lehrplan.length) {
+      out.push('\n## Lehrplan');
+      course.lehrplan.forEach(function (p) { out.push('- ' + p); });
+    }
+    if (course.cover) out.push('\n![Cover](' + course.cover + ')');
+    course.module.forEach(function (m, mi) {
+      out.push('\n## ' + (mi + 1) + '. ' + m.titel);
+      if (m.kurzbeschreibung) out.push(m.kurzbeschreibung);
+      m.lektionen.forEach(function (l, li) {
+        out.push('\n### ' + (mi + 1) + '.' + (li + 1) + ' ' + l.titel);
+        if (l.lernziele.length) {
+          out.push('**Lernziele:**');
+          l.lernziele.forEach(function (z) { out.push('- ' + z); });
+        }
+        if (l.bild) out.push('\n![' + l.titel + '](' + l.bild + ')');
+        if (l.inhalt) out.push('\n' + l.inhalt);
+        if (l.zusammenfassung) out.push('\n> **Zusammenfassung:** ' + l.zusammenfassung);
+        if (l.quiz.length) {
+          out.push('\n**Quiz:**');
+          l.quiz.forEach(function (q, qi) {
+            out.push((qi + 1) + '. ' + q.frage);
+            q.optionen.forEach(function (o, oi) {
+              out.push('   - ' + (oi === q.loesungIndex ? '**' + o + '** ✓' : o));
+            });
+            if (q.erklaerung) out.push('   > ' + q.erklaerung);
+          });
+        }
+        if (l.uebungen.length) {
+          out.push('\n**Übungen:**');
+          l.uebungen.forEach(function (u, ui) {
+            out.push((ui + 1) + '. ' + u.aufgabe);
+            if (u.tipp) out.push('   - *Tipp:* ' + u.tipp);
+            if (u.loesung) out.push('   - *Lösung:* ' + u.loesung);
+          });
+        }
+      });
+    });
+    if (course.glossar.length) {
+      out.push('\n## Glossar');
+      course.glossar.forEach(function (g) { out.push('- **' + g.begriff + ':** ' + g.definition); });
+    }
+    if (course.ressourcen.length) {
+      out.push('\n## Ressourcen');
+      course.ressourcen.forEach(function (r) { out.push('- **' + r.label + '**' + (r.notiz ? ' — ' + r.notiz : '')); });
+    }
+    return out.join('\n');
+  }
+
   /* ── Öffentliche Schnittstelle (wächst über die weiteren Tasks) ── */
   window.Quantum.courseStudio = {
     escapeHtml: escapeHtml,
@@ -198,5 +271,7 @@ window.Quantum = window.Quantum || {};
     themeStyle: themeStyle,
     coverPrompt: coverPrompt,
     lessonImagePrompt: lessonImagePrompt,
+    mdToHtml: mdToHtml,
+    buildMarkdown: buildMarkdown,
   };
 })();

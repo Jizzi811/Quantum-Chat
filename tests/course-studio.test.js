@@ -164,3 +164,34 @@ test('Bild-Prompts nennen Kurs- bzw. Lektionstitel und verbieten Text im Bild', 
   assert.match(CS.coverPrompt(course), /[Oo]hne Text/);
   assert.match(CS.lessonImagePrompt(course, 0, 0), /Erste Lektion/);
 });
+
+function sampleCourse() {
+  return {
+    titel: 'Excel-Grundlagen', untertitel: 'Sub', beschreibung: 'Beschreibung',
+    zielgruppe: 'Büro', niveau: 'Einsteiger', sprache: 'Deutsch', theme: 'neon', cover: '',
+    lehrplan: ['Zellen', 'Formeln'],
+    glossar: [{ begriff: 'Zelle', definition: 'Ein Kästchen <x>' }],
+    ressourcen: [{ label: 'Buch', notiz: 'Kap. 1' }],
+    module: [{ titel: 'Einstieg', kurzbeschreibung: 'Basis', lektionen: [{
+      titel: 'Oberfläche', lernziele: ['Menüband'], inhalt: 'Text mit **fett**.', zusammenfassung: 'Kurz',
+      bild: '', bildPrompt: '',
+      quiz: [{ frage: 'Frage?', optionen: ['A', 'B'], loesungIndex: 1, erklaerung: 'weil B' }],
+      uebungen: [{ aufgabe: 'Mach X', tipp: 'so', loesung: 'fertig' }],
+    }] }],
+  };
+}
+
+test('mdToHtml wandelt fett und Listen um und maskiert HTML', () => {
+  assert.match(CS.mdToHtml('Ein **wichtiger** Punkt'), /<strong>wichtiger<\/strong>/);
+  assert.match(CS.mdToHtml('- a\n- b'), /<ul><li>a<\/li><li>b<\/li><\/ul>/);
+  assert.match(CS.mdToHtml('<script>'), /&lt;script&gt;/);
+});
+
+test('buildMarkdown enthält Titel, Lektion, Quiz-Lösung und Glossar', () => {
+  const md = CS.buildMarkdown(sampleCourse());
+  assert.match(md, /^# Excel-Grundlagen/m);
+  assert.match(md, /### 1\.1 Oberfläche/);
+  assert.match(md, /\*\*B\*\* ✓/);           // richtige Antwort markiert
+  assert.match(md, /## Glossar/);
+  assert.match(md, /\*\*Zelle:\*\*/);
+});
