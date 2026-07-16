@@ -195,3 +195,22 @@ test('buildMarkdown enthält Titel, Lektion, Quiz-Lösung und Glossar', () => {
   assert.match(md, /## Glossar/);
   assert.match(md, /\*\*Zelle:\*\*/);
 });
+
+test('buildStandaloneHtml erzeugt eine vollständige, maskierte HTML-Seite', () => {
+  const course = sampleCourse();
+  course.titel = 'Kurs <x>';
+  course.module[0].lektionen[0].bild = 'data:image/png;base64,AAA';
+  const html = CS.buildStandaloneHtml(course);
+  assert.match(html, /^<!doctype html>/i);
+  assert.match(html, /<title>Kurs &lt;x&gt;<\/title>/);   // Titel maskiert
+  assert.match(html, /data:image\/png;base64,AAA/);        // Bild eingebettet
+  assert.match(html, /qz__check/);                          // Quiz-Button
+  assert.match(html, /addEventListener/);                   // Inline-Quiz-Skript
+  assert.match(html, /Glossar/);
+});
+
+test('buildStandaloneHtml markiert die richtige Quiz-Antwort per data-correct', () => {
+  const html = CS.buildStandaloneHtml(sampleCourse());
+  // Option B (Index 1) ist korrekt:
+  assert.match(html, /data-correct="1"[^>]*>\s*B/);
+});

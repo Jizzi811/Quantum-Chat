@@ -254,6 +254,87 @@ window.Quantum = window.Quantum || {};
     return out.join('\n');
   }
 
+  var THEMES = {
+    neon: { bg: '#080312', panel: '#160729', accent: '#B94DFF', accent2: '#00F5FF', text: '#FFFFFF', muted: '#CDBEE3' },
+    business: { bg: '#111827', panel: '#1F2937', accent: '#D4A72C', accent2: '#F5D675', text: '#FFFFFF', muted: '#D1D5DB' },
+    light: { bg: '#F5F7FB', panel: '#FFFFFF', accent: '#5B21B6', accent2: '#0891B2', text: '#111827', muted: '#4B5563' },
+  };
+
+  function quizHtml(quiz, idPrefix) {
+    return quiz.map(function (q, qi) {
+      var name = idPrefix + '-' + qi;
+      var opts = q.optionen.map(function (o, oi) {
+        return '<label class="qz__opt"><input type="radio" name="' + name + '" data-correct="' + (oi === q.loesungIndex ? '1' : '0') + '"> ' + escapeHtml(o) + '</label>';
+      }).join('');
+      return '<div class="qz"><p class="qz__q">' + escapeHtml(q.frage) + '</p>' + opts
+        + '<button type="button" class="qz__check">Lösung anzeigen</button>'
+        + (q.erklaerung ? '<p class="qz__exp" hidden>' + escapeHtml(q.erklaerung) + '</p>' : '') + '</div>';
+    }).join('');
+  }
+
+  function standaloneCss(t) {
+    return ':root{--bg:' + t.bg + ';--panel:' + t.panel + ';--accent:' + t.accent + ';--accent2:' + t.accent2 + ';--text:' + t.text + ';--muted:' + t.muted + '}'
+      + '*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,Segoe UI,Arial,sans-serif;line-height:1.6}'
+      + 'header.kh{padding:3rem 1.5rem;text-align:center;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}'
+      + 'header.kh h1{margin:0;font-size:2.2rem}header.kh p{margin:.5rem 0 0;opacity:.9}'
+      + '.wrap{display:flex;gap:2rem;max-width:1100px;margin:0 auto;padding:2rem 1.5rem;align-items:flex-start}'
+      + 'nav.toc{position:sticky;top:1rem;flex:0 0 220px;background:var(--panel);border-radius:12px;padding:1rem}'
+      + 'nav.toc a{color:var(--muted);text-decoration:none;display:block;padding:.25rem 0}nav.toc a:hover{color:var(--accent2)}'
+      + 'main{flex:1;min-width:0}.mod{margin-bottom:2.5rem}.mod h2{color:var(--accent2);border-bottom:2px solid var(--accent);padding-bottom:.3rem}'
+      + '.les{background:var(--panel);border-radius:12px;padding:1.25rem;margin:1rem 0}.les h3{margin-top:0}'
+      + '.les__goals{color:var(--muted)}.les__img{width:100%;border-radius:10px;margin:.5rem 0}'
+      + '.les__sum{border-left:3px solid var(--accent);padding-left:.75rem;color:var(--muted)}'
+      + '.qz{background:rgba(255,255,255,.05);border-radius:10px;padding:.75rem;margin:.6rem 0}.qz__q{font-weight:bold;margin:.2rem 0}'
+      + '.qz__opt{display:block;padding:.25rem .4rem;border-radius:6px;cursor:pointer}.qz__opt--correct{background:rgba(0,200,120,.35)}.qz__opt--wrong{background:rgba(220,60,60,.35)}'
+      + '.qz__check{margin-top:.4rem;background:var(--accent);color:#fff;border:0;border-radius:8px;padding:.35rem .8rem;cursor:pointer}'
+      + '.qz__exp{color:var(--muted);margin:.4rem 0 0}details{margin:.4rem 0}summary{cursor:pointer;font-weight:bold}'
+      + 'dl.gl dt{font-weight:bold;color:var(--accent2)}dl.gl dd{margin:0 0 .6rem}'
+      + '@media(max-width:760px){.wrap{flex-direction:column}nav.toc{position:static;width:100%}}';
+  }
+
+  var STANDALONE_SCRIPT = '<scr' + 'ipt>document.querySelectorAll(".qz__check").forEach(function(b){b.addEventListener("click",function(){var qz=b.closest(".qz");qz.querySelectorAll(".qz__opt").forEach(function(o){var i=o.querySelector("input");if(i.getAttribute("data-correct")==="1")o.classList.add("qz__opt--correct");else if(i.checked)o.classList.add("qz__opt--wrong");});var e=qz.querySelector(".qz__exp");if(e)e.hidden=false;});});</scr' + 'ipt>';
+
+  function buildStandaloneHtml(course) {
+    var t = THEMES[course.theme] || THEMES.neon;
+    var toc = '', body = '';
+    if (course.lehrplan.length) {
+      body += '<section class="mod"><h2>Lehrplan</h2><ul>' + course.lehrplan.map(function (p) { return '<li>' + escapeHtml(p) + '</li>'; }).join('') + '</ul></section>';
+    }
+    course.module.forEach(function (m, mi) {
+      toc += '<a href="#m' + mi + '">' + (mi + 1) + '. ' + escapeHtml(m.titel) + '</a>';
+      body += '<section class="mod" id="m' + mi + '"><h2>' + (mi + 1) + '. ' + escapeHtml(m.titel) + '</h2>';
+      if (m.kurzbeschreibung) body += '<p class="mod__sum">' + escapeHtml(m.kurzbeschreibung) + '</p>';
+      m.lektionen.forEach(function (l, li) {
+        body += '<article class="les"><h3>' + (mi + 1) + '.' + (li + 1) + ' ' + escapeHtml(l.titel) + '</h3>';
+        if (l.lernziele.length) body += '<ul class="les__goals">' + l.lernziele.map(function (z) { return '<li>' + escapeHtml(z) + '</li>'; }).join('') + '</ul>';
+        if (l.bild) body += '<img class="les__img" src="' + l.bild + '" alt="' + escapeHtml(l.titel) + '">';
+        if (l.inhalt) body += '<div class="les__body">' + mdToHtml(l.inhalt) + '</div>';
+        if (l.zusammenfassung) body += '<p class="les__sum"><strong>Zusammenfassung:</strong> ' + escapeHtml(l.zusammenfassung) + '</p>';
+        if (l.quiz.length) body += '<div class="les__quiz">' + quizHtml(l.quiz, 'q' + mi + '-' + li) + '</div>';
+        if (l.uebungen.length) body += '<div class="les__ex"><h4>Übungen</h4>' + l.uebungen.map(function (u) {
+          return '<details><summary>' + escapeHtml(u.aufgabe) + '</summary>' + (u.tipp ? '<p><em>Tipp:</em> ' + escapeHtml(u.tipp) + '</p>' : '') + (u.loesung ? '<p><strong>Lösung:</strong> ' + escapeHtml(u.loesung) + '</p>' : '') + '</details>';
+        }).join('') + '</div>';
+        body += '</article>';
+      });
+      body += '</section>';
+    });
+    if (course.glossar.length) {
+      body += '<section class="mod"><h2>Glossar</h2><dl class="gl">' + course.glossar.map(function (g) {
+        return '<dt>' + escapeHtml(g.begriff) + '</dt><dd>' + escapeHtml(g.definition) + '</dd>';
+      }).join('') + '</dl></section>';
+    }
+    if (course.ressourcen.length) {
+      body += '<section class="mod"><h2>Ressourcen</h2><ul>' + course.ressourcen.map(function (r) {
+        return '<li><strong>' + escapeHtml(r.label) + '</strong>' + (r.notiz ? ' — ' + escapeHtml(r.notiz) : '') + '</li>';
+      }).join('') + '</ul></section>';
+    }
+    var header = '<header class="kh">' + (course.cover ? '<img src="' + course.cover + '" alt="Cover" style="max-width:420px;width:100%;border-radius:12px;margin-bottom:1rem">' : '')
+      + '<h1>' + escapeHtml(course.titel) + '</h1>' + (course.untertitel ? '<p>' + escapeHtml(course.untertitel) + '</p>' : '') + '</header>';
+    return '<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'
+      + escapeHtml(course.titel) + '</title><style>' + standaloneCss(t) + '</style></head><body>'
+      + header + '<div class="wrap"><nav class="toc">' + toc + '</nav><main>' + body + '</main></div>' + STANDALONE_SCRIPT + '</body></html>';
+  }
+
   /* ── Öffentliche Schnittstelle (wächst über die weiteren Tasks) ── */
   window.Quantum.courseStudio = {
     escapeHtml: escapeHtml,
@@ -273,5 +354,7 @@ window.Quantum = window.Quantum || {};
     lessonImagePrompt: lessonImagePrompt,
     mdToHtml: mdToHtml,
     buildMarkdown: buildMarkdown,
+    quizHtml: quizHtml,
+    buildStandaloneHtml: buildStandaloneHtml,
   };
 })();
