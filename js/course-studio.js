@@ -101,6 +101,86 @@ window.Quantum = window.Quantum || {};
     };
   }
 
+  function outlineSystemPrompt(params) {
+    var sprache = (params && params.sprache) || 'Deutsch';
+    return 'Du bist ein erfahrener Kurs-Designer. Antworte AUSSCHLIESSLICH mit gültigem JSON, '
+      + 'ohne Text davor oder danach, ohne Code-Fences. Schreibe alle Inhalte auf ' + sprache + '. '
+      + 'Schema: {"titel":string,"untertitel":string,"beschreibung":string,"lehrplan":[string],'
+      + '"module":[{"titel":string,"kurzbeschreibung":string,"lektionen":[{"titel":string,"lernziele":[string]}]}]}';
+  }
+
+  function outlineUserPrompt(thema, quelle, params) {
+    params = params || {};
+    var lines = [];
+    lines.push('Erstelle den Lehrplan (nur Gliederung, noch keine Lektionstexte) für einen Online-Kurs.');
+    lines.push('Thema: ' + thema);
+    if (params.zielgruppe) lines.push('Zielgruppe: ' + params.zielgruppe);
+    if (params.niveau) lines.push('Niveau: ' + params.niveau);
+    lines.push('Anzahl Module: ' + (params.moduleCount || 4));
+    lines.push('Lektionen pro Modul: ca. ' + (params.lessonsPerModule || 3));
+    lines.push('Jede Lektion braucht 2–4 konkrete Lernziele.');
+    if (quelle) lines.push('\nStütze dich inhaltlich auf dieses Quellmaterial:\n' + String(quelle).slice(0, 6000));
+    return lines.join('\n');
+  }
+
+  function lessonSystemPrompt(params) {
+    params = params || {};
+    var sprache = params.sprache || 'Deutsch';
+    return 'Du bist ein didaktisch starker Kurs-Autor. Antworte AUSSCHLIESSLICH mit gültigem JSON, '
+      + 'ohne Code-Fences. Schreibe auf ' + sprache + '. '
+      + 'Schema: {"inhalt":string (ausführlicher Erklärtext in Markdown, 250–500 Wörter),'
+      + '"zusammenfassung":string,'
+      + (params.quiz ? '"quiz":[{"frage":string,"optionen":[string],"loesungIndex":number,"erklaerung":string}],' : '')
+      + '"uebungen":[{"aufgabe":string,"tipp":string,"loesung":string}]}';
+  }
+
+  function lessonUserPrompt(ctx) {
+    ctx = ctx || {};
+    var lines = [];
+    lines.push('Schreibe die vollständige Lektion für diesen Kurs.');
+    lines.push('Kurs: ' + ctx.kursTitel);
+    if (ctx.zielgruppe) lines.push('Zielgruppe: ' + ctx.zielgruppe);
+    if (ctx.niveau) lines.push('Niveau: ' + ctx.niveau);
+    lines.push('Modul: ' + ctx.modulTitel);
+    lines.push('Lektion: ' + ctx.lektionTitel);
+    if (ctx.lernziele && ctx.lernziele.length) lines.push('Lernziele: ' + ctx.lernziele.join('; '));
+    if (ctx.nachbarn && ctx.nachbarn.length) lines.push('Andere Lektionen im Kurs (nicht wiederholen): ' + ctx.nachbarn.join('; '));
+    if (ctx.quelle) lines.push('\nQuellmaterial:\n' + String(ctx.quelle).slice(0, 3000));
+    lines.push('\nGib ' + (ctx.quiz ? '2–4 Quizfragen mit je 3–4 Optionen und ' : '') + '1–2 praktische Übungen aus.');
+    return lines.join('\n');
+  }
+
+  function extrasSystemPrompt(params) {
+    var sprache = (params && params.sprache) || 'Deutsch';
+    return 'Antworte AUSSCHLIESSLICH mit gültigem JSON, ohne Code-Fences. Sprache: ' + sprache + '. '
+      + 'Schema: {"glossar":[{"begriff":string,"definition":string}],"ressourcen":[{"label":string,"notiz":string}]}';
+  }
+
+  function extrasUserPrompt(course) {
+    var titles = [];
+    arr(course.module).forEach(function (m) { arr(m.lektionen).forEach(function (l) { titles.push(l.titel); }); });
+    return 'Erzeuge Begleitmaterial für den Kurs "' + course.titel + '".\n'
+      + 'Lektionen: ' + titles.join('; ') + '\n'
+      + 'Gib 8–15 Glossarbegriffe und 4–8 weiterführende Ressourcen (allgemeine Empfehlungen, keine erfundenen URLs).';
+  }
+
+  function themeStyle(theme) {
+    if (theme === 'light') return 'Klarer, heller, moderner Flat-Illustration-Stil. ';
+    if (theme === 'business') return 'Edler, professioneller Business-Stil. ';
+    return 'Neon-Cyberpunk-Stil, leuchtende Farben. ';
+  }
+
+  function coverPrompt(course) {
+    return 'Cover-Illustration für einen Online-Kurs mit dem Titel "' + course.titel + '". '
+      + themeStyle(course.theme) + 'Ohne Text im Bild.';
+  }
+
+  function lessonImagePrompt(course, mi, li) {
+    var l = course.module[mi].lektionen[li];
+    return 'Illustration zum Lernthema "' + l.titel + '" (Kurs: ' + course.titel + '). '
+      + themeStyle(course.theme) + 'Ohne Text im Bild.';
+  }
+
   /* ── Öffentliche Schnittstelle (wächst über die weiteren Tasks) ── */
   window.Quantum.courseStudio = {
     escapeHtml: escapeHtml,
@@ -109,5 +189,14 @@ window.Quantum = window.Quantum || {};
     parseOutline: parseOutline,
     parseLesson: parseLesson,
     parseExtras: parseExtras,
+    outlineSystemPrompt: outlineSystemPrompt,
+    outlineUserPrompt: outlineUserPrompt,
+    lessonSystemPrompt: lessonSystemPrompt,
+    lessonUserPrompt: lessonUserPrompt,
+    extrasSystemPrompt: extrasSystemPrompt,
+    extrasUserPrompt: extrasUserPrompt,
+    themeStyle: themeStyle,
+    coverPrompt: coverPrompt,
+    lessonImagePrompt: lessonImagePrompt,
   };
 })();

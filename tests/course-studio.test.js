@@ -127,3 +127,40 @@ test('parseExtras normalisiert Glossar und Ressourcen', () => {
   assert.equal(ex.ressourcen.length, 1);
   assert.equal(ex.ressourcen[0].label, 'Buch');
 });
+
+test('outline-Prompts enthalten Sprache, Umfang und Quellmaterial', () => {
+  const sys = CS.outlineSystemPrompt({ sprache: 'Englisch' });
+  assert.match(sys, /Englisch/);
+  assert.match(sys, /JSON/);
+  const user = CS.outlineUserPrompt('Excel', 'MEINE QUELLE', { zielgruppe: 'Büro', niveau: 'Profi', moduleCount: 5, lessonsPerModule: 3 });
+  assert.match(user, /Excel/);
+  assert.match(user, /Büro/);
+  assert.match(user, /5/);
+  assert.match(user, /MEINE QUELLE/);
+});
+
+test('lessonSystemPrompt lässt Quiz-Schema weg, wenn quiz=false', () => {
+  assert.doesNotMatch(CS.lessonSystemPrompt({ sprache: 'Deutsch', quiz: false }), /quiz/i);
+  assert.match(CS.lessonSystemPrompt({ sprache: 'Deutsch', quiz: true }), /quiz/i);
+});
+
+test('lessonUserPrompt nennt Nachbarlektionen zur Abgrenzung', () => {
+  const p = CS.lessonUserPrompt({ kursTitel: 'K', modulTitel: 'M', lektionTitel: 'L2', lernziele: ['z'], nachbarn: ['L1', 'L3'], quiz: true });
+  assert.match(p, /L1/);
+  assert.match(p, /L3/);
+  assert.match(p, /L2/);
+});
+
+test('extrasUserPrompt listet alle Lektionstitel', () => {
+  const course = { titel: 'K', module: [{ titel: 'M', lektionen: [{ titel: 'A' }, { titel: 'B' }] }] };
+  const p = CS.extrasUserPrompt(course);
+  assert.match(p, /A/);
+  assert.match(p, /B/);
+});
+
+test('Bild-Prompts nennen Kurs- bzw. Lektionstitel und verbieten Text im Bild', () => {
+  const course = { titel: 'Neon-Kurs', theme: 'neon', module: [{ titel: 'M', lektionen: [{ titel: 'Erste Lektion' }] }] };
+  assert.match(CS.coverPrompt(course), /Neon-Kurs/);
+  assert.match(CS.coverPrompt(course), /[Oo]hne Text/);
+  assert.match(CS.lessonImagePrompt(course, 0, 0), /Erste Lektion/);
+});
