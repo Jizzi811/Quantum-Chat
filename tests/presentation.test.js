@@ -39,3 +39,17 @@ test('bindet Studio-CSS und PPTX-Modul ein', () => {
   assert.match(html, /presentation-studio\.css/);
   assert.match(html, /pptxgenjs/);
 });
+
+test('unterstützt gespeicherte eigene Designs und Logo', () => {
+  assert.match(source, /Eigenes Design erstellen/);
+  assert.match(source, /quantum\.presentation\.branding/);
+  assert.match(source, /brandLogo/);
+});
+
+test('LongCat-Video ist entfernt, Remotion-Studio bleibt aktiv', () => {
+  const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
+  assert.doesNotMatch(html, /js\/video-real\.js/);
+  assert.match(html, /js\/video-studio\.js/);
+  assert.equal(fs.existsSync(path.join(__dirname, '../js/video-real.js')), false);
+  assert.equal(fs.existsSync(path.join(__dirname, '../js/video-studio.js')), true);
+});

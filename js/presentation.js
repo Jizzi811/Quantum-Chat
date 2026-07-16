@@ -12,6 +12,7 @@ window.Quantum = window.Quantum || {};
   let modal = null;
   let slides = [];
   let current = 0;
+  let brandLogo = '';
 
   function escapeHtml(value) {
     return String(value || '').replace(/[&<>"']/g, function (c) {
@@ -45,13 +46,18 @@ window.Quantum = window.Quantum || {};
   }
 
   function themeName() { return modal.querySelector('#pres-theme').value; }
-  function theme() { return THEMES[themeName()] || THEMES.neon; }
+  function theme() {
+    if (themeName() !== 'custom') return THEMES[themeName()] || THEMES.neon;
+    return { bg: modal.querySelector('#pres-bg').value.slice(1), panel: '', accent: modal.querySelector('#pres-accent').value.slice(1), accent2: modal.querySelector('#pres-accent2').value.slice(1), text: modal.querySelector('#pres-text').value.slice(1), muted: modal.querySelector('#pres-text').value.slice(1), font: modal.querySelector('#pres-font').value };
+  }
 
   function slideMarkup(slide, index) {
     const bullets = slide.bullets.map(function (b) { return '<li>' + escapeHtml(b) + '</li>'; }).join('');
-    return '<article class="presentation-slide presentation-slide--' + themeName() + '">' +
+    const t = theme();
+    const style = themeName() === 'custom' ? '--pres-bg:#' + t.bg + ';--pres-accent:#' + t.accent + ';--pres-accent2:#' + t.accent2 + ';--pres-text:#' + t.text + ';--pres-font:' + t.font : '';
+    return '<article class="presentation-slide presentation-slide--' + themeName() + '" style="' + style + '">' +
       '<div class="presentation-slide__glow"></div>' +
-      '<span class="presentation-slide__brand">QUANTUM · NADJ.AI</span>' +
+      (themeName() === 'custom' && brandLogo ? '<img class="presentation-slide__logo" src="' + brandLogo + '" alt="Logo">' : '<span class="presentation-slide__brand">QUANTUM · NADJ.AI</span>') +
       '<div class="presentation-slide__body"><p class="presentation-slide__kicker">SLIDE ' + String(index + 1).padStart(2, '0') + '</p>' +
       '<h1>' + escapeHtml(slide.title) + '</h1>' +
       (slide.subtitle ? '<h2>' + escapeHtml(slide.subtitle) + '</h2>' : '') +
@@ -112,12 +118,13 @@ window.Quantum = window.Quantum || {};
   async function exportPptx() {
     if (!slides.length) return;
     if (typeof window.PptxGenJS !== 'function') { setStatus('PPTX-Modul konnte nicht geladen werden. Bitte Internetverbindung prüfen.', 'error'); return; }
-    const colors = theme(); const pptx = new window.PptxGenJS();
+    const colors = theme(); const font = colors.font || 'Arial'; const pptx = new window.PptxGenJS();
     pptx.layout = 'LAYOUT_WIDE'; pptx.author = 'QUANTUM by NADJ.AI'; pptx.subject = modal.querySelector('#pres-topic').value;
     slides.forEach(function (item, index) {
       const slide = pptx.addSlide(); slide.background = { color: colors.bg };
       slide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 0.12, h: 7.5, fill: { color: colors.accent }, line: { color: colors.accent } });
-      slide.addText('QUANTUM · NADJ.AI', { x: 10.3, y: 0.28, w: 2.4, h: 0.25, fontFace: 'Arial', fontSize: 9, color: colors.muted, align: 'right', charSpacing: 1.4, margin: 0 });
+      if (themeName() === 'custom' && brandLogo) slide.addImage({ data: brandLogo, x: 10.8, y: 0.2, w: 1.7, h: 0.65 });
+      else slide.addText('QUANTUM · NADJ.AI', { x: 10.3, y: 0.28, w: 2.4, h: 0.25, fontFace: font, fontSize: 9, color: colors.muted, align: 'right', charSpacing: 1.4, margin: 0 });
       slide.addText('SLIDE ' + String(index + 1).padStart(2, '0'), { x: 0.8, y: 1.0, w: 2, h: 0.3, fontFace: 'Arial', bold: true, fontSize: 11, color: colors.accent2, charSpacing: 2, margin: 0 });
       slide.addText(item.title, { x: 0.8, y: 1.4, w: 11.2, h: 1.0, fontFace: 'Arial', bold: true, fontSize: index === 0 ? 34 : 28, color: colors.text, breakLine: false, margin: 0, valign: 'mid', fit: 'shrink' });
       if (item.subtitle) slide.addText(item.subtitle, { x: 0.82, y: 2.5, w: 10.8, h: 0.55, fontFace: 'Arial', fontSize: 17, color: colors.muted, margin: 0, fit: 'shrink' });
@@ -129,11 +136,24 @@ window.Quantum = window.Quantum || {};
     catch (error) { setStatus('PPTX-Export fehlgeschlagen: ' + error.message, 'error'); }
   }
 
+  function saveBranding() {
+    try { localStorage.setItem('quantum.presentation.branding', JSON.stringify({ colors: theme(), logo: brandLogo })); setStatus('Eigenes Design wurde in diesem Browser gespeichert.', 'ok'); }
+    catch (_) { setStatus('Design konnte nicht gespeichert werden. Das Logo ist möglicherweise zu groß.', 'error'); }
+  }
+
+  function loadBranding() {
+    try {
+      const data = JSON.parse(localStorage.getItem('quantum.presentation.branding') || 'null'); if (!data) return;
+      modal.querySelector('#pres-bg').value = '#' + data.colors.bg; modal.querySelector('#pres-accent').value = '#' + data.colors.accent; modal.querySelector('#pres-accent2').value = '#' + data.colors.accent2; modal.querySelector('#pres-text').value = '#' + data.colors.text; modal.querySelector('#pres-font').value = data.colors.font || 'Arial'; brandLogo = data.logo || '';
+    } catch (_) { /* ungültigen alten Speicherstand ignorieren */ }
+  }
+
   function buildModal() {
     modal = document.createElement('div'); modal.className = 'tts-studio presentation-studio'; modal.hidden = true;
     modal.innerHTML = '<div class="tts-studio__card presentation-studio__card"><div class="tts-studio__head"><span class="tts-studio__title">📊 PRÄSENTATIONS-STUDIO</span><button class="tts-studio__close" title="Schließen">✕</button></div>' +
       '<div class="presentation-studio__form"><label>Thema<textarea id="pres-topic" class="tts-studio__text" rows="2" placeholder="z. B. BrandMind – das KI-Betriebssystem für Marken"></textarea></label>' +
-      '<div class="presentation-studio__fields"><label>Zielgruppe<input id="pres-audience" class="tts-studio__input" placeholder="z. B. Investoren"></label><label>Folien<input id="pres-count" class="tts-studio__input" type="number" min="3" max="20" value="8"></label><label>Design<select id="pres-theme" class="tts-studio__input"><option value="neon">Quantum Neon</option><option value="business">Gold Business</option><option value="light">Clean Light</option></select></label></div>' +
+      '<div class="presentation-studio__fields"><label>Zielgruppe<input id="pres-audience" class="tts-studio__input" placeholder="z. B. Investoren"></label><label>Folien<input id="pres-count" class="tts-studio__input" type="number" min="3" max="20" value="8"></label><label>Design<select id="pres-theme" class="tts-studio__input"><option value="neon">Quantum Neon</option><option value="business">Gold Business</option><option value="light">Clean Light</option><option value="custom">Eigenes Design</option></select></label></div>' +
+      '<details class="presentation-studio__branding"><summary>🎨 Eigenes Design erstellen</summary><div class="presentation-studio__colors"><label>Hintergrund<input id="pres-bg" type="color" value="#111827"></label><label>Akzent<input id="pres-accent" type="color" value="#d4a72c"></label><label>Zweitfarbe<input id="pres-accent2" type="color" value="#f5d675"></label><label>Text<input id="pres-text" type="color" value="#ffffff"></label></div><div class="presentation-studio__fields"><label>Schrift<select id="pres-font" class="tts-studio__input"><option>Arial</option><option>Georgia</option><option>Verdana</option><option>Trebuchet MS</option><option>Times New Roman</option><option>Courier New</option></select></label><label>Eigenes Logo<input id="pres-logo" type="file" accept="image/png,image/jpeg,image/svg+xml"></label><button type="button" class="presentation-studio__save-brand">Design speichern</button></div><small>Das Design bleibt in diesem Browser gespeichert. Logo maximal 1 MB.</small></details>' +
       '<button class="tts-studio__generate presentation-studio__generate">⚡ DECK GENERIEREN</button><div class="presentation-studio__status" aria-live="polite"></div></div>' +
       '<section class="presentation-studio__result" hidden><div class="presentation-studio__preview"></div><div class="presentation-studio__nav"><button class="presentation-studio__prev">← Zurück</button><span class="presentation-studio__position"></span><button class="presentation-studio__next">Weiter →</button></div><div class="presentation-studio__exports"><button class="presentation-studio__pdf">⬇ PDF</button><button class="presentation-studio__pptx">⬇ PPTX (editierbar)</button></div></section></div>';
     document.body.appendChild(modal);
@@ -145,6 +165,10 @@ window.Quantum = window.Quantum || {};
     modal.querySelector('.presentation-studio__pdf').onclick = exportPdf;
     modal.querySelector('.presentation-studio__pptx').onclick = exportPptx;
     modal.querySelector('#pres-theme').onchange = render;
+    ['pres-bg', 'pres-accent', 'pres-accent2', 'pres-text', 'pres-font'].forEach(function (id) { modal.querySelector('#' + id).oninput = function () { modal.querySelector('#pres-theme').value = 'custom'; render(); }; });
+    modal.querySelector('#pres-logo').onchange = function () { const file = this.files && this.files[0]; if (!file) return; if (file.size > 1024 * 1024) { setStatus('Das Logo darf maximal 1 MB groß sein.', 'error'); return; } const reader = new FileReader(); reader.onload = function () { brandLogo = reader.result; modal.querySelector('#pres-theme').value = 'custom'; render(); }; reader.readAsDataURL(file); };
+    modal.querySelector('.presentation-studio__save-brand').onclick = saveBranding;
+    loadBranding();
   }
 
   function open(topic) { if (!modal) buildModal(); modal.hidden = false; if (topic) modal.querySelector('#pres-topic').value = topic; modal.querySelector('#pres-topic').focus(); }
