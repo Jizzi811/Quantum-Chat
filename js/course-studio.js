@@ -386,6 +386,115 @@ window.Quantum = window.Quantum || {};
       + '<scr' + 'ipt>onload=function(){setTimeout(function(){print()},300)}</scr' + 'ipt></body></html>';
   }
 
+  function askAI(argsObj) {
+    // Streaming bevorzugen (umgeht Netlifys 10-s-Limit), sonst klassisch.
+    if (window.Quantum.ai && window.Quantum.ai.askStream) {
+      return window.Quantum.ai.askStream(argsObj).catch(function () {
+        return window.Quantum.ai.ask(argsObj);
+      });
+    }
+    return window.Quantum.ai.ask(argsObj);
+  }
+
+  async function generateOutline(params) {
+    params = params || {};
+    var res = await askAI({
+      system: outlineSystemPrompt(params),
+      prompt: outlineUserPrompt(params.thema, params.quelle, params),
+      temperature: 0.5, maxTokens: 4000,
+    });
+    return parseOutline(res.text, params);
+  }
+
+  function flatLessons(course) {
+    var list = [];
+    course.module.forEach(function (m, mi) { m.lektionen.forEach(function (l, li) { list.push({ mi: mi, li: li }); }); });
+    return list;
+  }
+
+  async function elaborateOneLesson(course, pos, params) {
+    var m = course.module[pos.mi];
+    var l = m.lektionen[pos.li];
+    var nachbarn = [];
+    m.lektionen.forEach(function (x, i) { if (i !== pos.li) nachbarn.push(x.titel); });
+    var res = await askAI({
+      system: lessonSystemPrompt({ sprache: course.sprache, quiz: params.quiz }),
+      prompt: lessonUserPrompt({
+        kursTitel: course.titel, zielgruppe: course.zielgruppe, niveau: course.niveau, sprache: course.sprache,
+        modulTitel: m.titel, lektionTitel: l.titel, lernziele: l.lernziele, nachbarn: nachbarn,
+        quelle: params.quelle, quiz: params.quiz,
+      }),
+      temperature: 0.6, maxTokens: 3000,
+    });
+    var parsed = parseLesson(res.text);
+    l.inhalt = parsed.inhalt; l.zusammenfassung = parsed.zusammenfassung;
+    l.quiz = parsed.quiz; l.uebungen = parsed.uebungen;
+  }
+
+  async function elaborateCourse(course, params, hooks) {
+    params = params || {}; hooks = hooks || {};
+    function cancelled() { return typeof hooks.shouldCancel === 'function' && hooks.shouldCancel(); }
+    function progress(label, done, total) { if (typeof hooks.onProgress === 'function') hooks.onProgress(label, done, total); }
+    var errors = [];
+    var lessons = flatLessons(course);
+
+    // Phase 2a: Lektionen
+    for (var i = 0; i < lessons.length; i++) {
+      if (cancelled()) return { errors: errors, cancelled: true };
+      progress('Lektion ' + (i + 1) + '/' + lessons.length, i, lessons.length);
+      try {
+        await elaborateOneLesson(course, lessons[i], params);
+      } catch (e1) {
+        try {
+          await elaborateOneLesson(course, lessons[i], params);
+        } catch (e2) {
+          var l = course.module[lessons[i].mi].lektionen[lessons[i].li];
+          l.inhalt = l.inhalt || '_Diese Lektion konnte nicht automatisch erzeugt werden. Bitte manuell ergänzen._';
+          errors.push(l.titel + ': ' + (e2.message || 'Fehler'));
+        }
+      }
+    }
+
+    // Phase 2b: Begleitmaterial
+    if (cancelled()) return { errors: errors, cancelled: true };
+    progress('Begleitmaterial …', lessons.length, lessons.length);
+    try {
+      var ex = await askAI({
+        system: extrasSystemPrompt({ sprache: course.sprache }),
+        prompt: extrasUserPrompt(course), temperature: 0.5, maxTokens: 2000,
+      });
+      var parsedEx = parseExtras(ex.text);
+      course.glossar = parsedEx.glossar; course.ressourcen = parsedEx.ressourcen;
+    } catch (e) {
+      errors.push('Begleitmaterial: ' + (e.message || 'Fehler'));
+    }
+
+    // Phase 2c: Bilder (optional, sequenziell, best effort)
+    if (params.bilder && window.Quantum.imageStudio && window.Quantum.imageStudio.generate) {
+      var targets = [{ cover: true }].concat(lessons);
+      for (var j = 0; j < targets.length; j++) {
+        if (cancelled()) return { errors: errors, cancelled: true };
+        progress('Bild ' + (j + 1) + '/' + targets.length, j, targets.length);
+        try {
+          if (targets[j].cover) {
+            var cres = await window.Quantum.imageStudio.generate({ prompt: coverPrompt(course), aspectRatio: '16:9' });
+            course.cover = cres.image;
+          } else {
+            var p = targets[j];
+            var lz = course.module[p.mi].lektionen[p.li];
+            var ires = await window.Quantum.imageStudio.generate({ prompt: lessonImagePrompt(course, p.mi, p.li), aspectRatio: '16:9' });
+            lz.bild = ires.image;
+          }
+        } catch (e) {
+          errors.push('Bild ' + (j + 1) + ': ' + (e.message || 'Fehler'));
+        }
+      }
+    }
+
+    progress('Fertig', lessons.length, lessons.length);
+    return { errors: errors, cancelled: false };
+  }
+
   /* ── Öffentliche Schnittstelle (wächst über die weiteren Tasks) ── */
   window.Quantum.courseStudio = {
     escapeHtml: escapeHtml,
@@ -408,5 +517,7 @@ window.Quantum = window.Quantum || {};
     quizHtml: quizHtml,
     buildStandaloneHtml: buildStandaloneHtml,
     buildPrintHtml: buildPrintHtml,
+    generateOutline: generateOutline,
+    elaborateCourse: elaborateCourse,
   };
 })();

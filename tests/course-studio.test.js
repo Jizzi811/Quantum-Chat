@@ -222,3 +222,92 @@ test('buildPrintHtml erzeugt druckbare Seite mit Seitenumbruch und markierter L�
   assert.match(html, /<strong>B ✓<\/strong>/);   // richtige Antwort markiert
   assert.match(html, /print\(\)/);                // Auto-Druck
 });
+
+test.beforeEach(() => {
+  Quantum.ai.ask = undefined;
+  Quantum.ai.askStream = undefined;
+  Quantum.imageStudio.generate = undefined;
+});
+
+test('generateOutline bevorzugt askStream und liefert ein Kurs-Gerüst', async () => {
+  let streamCalls = 0;
+  Quantum.ai.askStream = async (args) => {
+    streamCalls += 1;
+    assert.match(args.system, /JSON/);
+    return { text: '{"titel":"T","module":[{"titel":"M","lektionen":[{"titel":"L","lernziele":["z"]}]}]}', model: 'm' };
+  };
+  const course = await CS.generateOutline({ thema: 'X', sprache: 'Deutsch', theme: 'neon', moduleCount: 4, lessonsPerModule: 3 });
+  assert.equal(streamCalls, 1);
+  assert.equal(course.module[0].lektionen[0].titel, 'L');
+});
+
+test('generateOutline fällt bei Stream-Fehler auf ask() zurück', async () => {
+  Quantum.ai.askStream = async () => { throw new Error('Stream kaputt'); };
+  let askCalls = 0;
+  Quantum.ai.ask = async () => { askCalls += 1; return { text: '{"titel":"T","module":[{"titel":"M","lektionen":[{"titel":"L"}]}]}', model: 'm' }; };
+  const course = await CS.generateOutline({ thema: 'X' });
+  assert.equal(askCalls, 1);
+  assert.equal(course.module[0].titel, 'M');
+});
+
+function outlineFixture() {
+  return CS.parseOutline('{"titel":"Kurs","module":[{"titel":"M1","lektionen":[{"titel":"L1","lernziele":["a"]},{"titel":"L2","lernziele":["b"]}]}]}', { sprache: 'Deutsch', theme: 'neon' });
+}
+
+test('elaborateCourse füllt jede Lektion und meldet Fortschritt', async () => {
+  const course = outlineFixture();
+  let lessonCalls = 0;
+  const progress = [];
+  Quantum.ai.askStream = async (args) => {
+    if (/Kurs-Autor/.test(args.system)) {
+      lessonCalls += 1;
+      return { text: '{"inhalt":"Voller Text","zusammenfassung":"kurz","quiz":[{"frage":"f","optionen":["a","b"],"loesungIndex":1,"erklaerung":"e"}],"uebungen":[{"aufgabe":"tu was"}]}', model: 'm' };
+    }
+    return { text: '{"glossar":[{"begriff":"g","definition":"d"}],"ressourcen":[{"label":"r"}]}', model: 'm' };
+  };
+  const result = await CS.elaborateCourse(course, { quiz: true, bilder: false }, {
+    onProgress: (label) => progress.push(label),
+  });
+  assert.equal(lessonCalls, 2);
+  assert.equal(course.module[0].lektionen[0].inhalt, 'Voller Text');
+  assert.equal(course.glossar[0].begriff, 'g');
+  assert.deepEqual(result.errors, []);
+  assert.ok(progress.some((p) => /Lektion 1\/2/.test(p)));
+});
+
+test('elaborateCourse macht bei Lektionsfehler weiter (Retry, dann Fallback)', async () => {
+  const course = outlineFixture();
+  let calls = 0;
+  Quantum.ai.askStream = async (args) => {
+    if (/Kurs-Autor/.test(args.system)) {
+      calls += 1;
+      throw new Error('immer kaputt');
+    }
+    return { text: '{"glossar":[],"ressourcen":[]}', model: 'm' };
+  };
+  const result = await CS.elaborateCourse(course, { quiz: true, bilder: false }, {});
+  assert.equal(calls, 4);                       // 2 Lektionen × (1 Versuch + 1 Retry)
+  assert.equal(result.errors.length, 2);
+  assert.match(course.module[0].lektionen[0].inhalt, /konnte nicht/);
+});
+
+test('elaborateCourse generiert Bilder nur bei bilder=true', async () => {
+  const course = outlineFixture();
+  Quantum.ai.askStream = async (args) => {
+    if (/Kurs-Autor/.test(args.system)) return { text: '{"inhalt":"t","uebungen":[]}', model: 'm' };
+    return { text: '{"glossar":[],"ressourcen":[]}', model: 'm' };
+  };
+  let imgCalls = 0;
+  Quantum.imageStudio.generate = async () => { imgCalls += 1; return { image: 'data:image/png;base64,ZZZ' }; };
+  await CS.elaborateCourse(course, { quiz: false, bilder: true }, {});
+  assert.equal(imgCalls, 3);                    // 1 Cover + 2 Lektionen
+  assert.equal(course.cover, 'data:image/png;base64,ZZZ');
+  assert.equal(course.module[0].lektionen[0].bild, 'data:image/png;base64,ZZZ');
+});
+
+test('elaborateCourse bricht bei shouldCancel ab', async () => {
+  const course = outlineFixture();
+  Quantum.ai.askStream = async () => ({ text: '{"inhalt":"t","uebungen":[]}', model: 'm' });
+  const result = await CS.elaborateCourse(course, { quiz: false, bilder: false }, { shouldCancel: () => true });
+  assert.equal(result.cancelled, true);
+});
