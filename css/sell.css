@@ -67,8 +67,13 @@
 }
 
 .sell__cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
   width: 100%;
   min-height: 52px;
+  text-decoration: none;
   font-family: var(--font-display);
   font-weight: 800;
   letter-spacing: 0.08em;
