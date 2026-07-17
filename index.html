@@ -204,6 +204,7 @@
           </div>
           <span class="chat-window__title">quantum://neural-link</span>
           <button class="chat-window__menu-btn" id="btn-skillmenu" data-testid="skill-menu-btn" title="Alle Skills anzeigen">◈ SKILLS</button>
+          <button class="chat-window__live" id="btn-livechat" data-testid="livechat-btn" title="Live-Chat öffnen" hidden>💬 LIVE</button>
           <button class="chat-window__clear" id="btn-clear" data-testid="clear-chat-btn" title="Chat leeren">⟲</button>
         </div>
         <div class="skill-menu" id="skill-menu" data-testid="skill-menu" hidden></div>
@@ -380,5 +381,15 @@
   <script src="js/app.js"></script>
   <script src="js/checkout.js"></script>
   <script src="js/landing.js"></script>
+  <!-- Live-Chat (Chatwoot): baseUrl + websiteToken aus deinem Chatwoot-Konto
+       eintragen, dann erscheint der 💬-LIVE-Schalter im Chatfenster.
+       Beide Felder leer lassen = Live-Chat aus. -->
+  <script>
+    window.QUANTUM_CHATWOOT = {
+      baseUrl: '',      /* z. B. 'https://app.chatwoot.com' */
+      websiteToken: ''  /* Website-Token aus dem Chatwoot-Postfach */
+    };
+  </script>
+  <script src="js/livechat.js"></script>
 </body>
 </html>
