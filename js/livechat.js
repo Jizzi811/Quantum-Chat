@@ -1,26 +1,44 @@
 /* ═══════════════════════════════════════════════════════════════
-   QUANTUM — Live-Chat (Chatwoot)
-   Bindet das Chatwoot-Website-Widget ein und steuert es über den
-   Schalter „💬 LIVE" im Chatfenster. Geladen wird NUR, wenn in
-   window.QUANTUM_CHATWOOT sowohl baseUrl als auch websiteToken
-   gesetzt sind (siehe Konfig-Block in index.html). Ohne Konfiguration
-   bleibt der Schalter ausgeblendet — es bricht nichts.
+   QUANTUM — Live-Chat-Schalter „💬" im Chatfenster
+   Zwei Optionen, die erste konfigurierte gewinnt:
 
-   Werte holst du dir aus deinem Chatwoot-Konto (Cloud unter
-   app.chatwoot.com oder selbst gehostet): Postfach vom Typ „Website"
-   anlegen → dort stehen Basis-URL und Website-Token.
+   (A) WhatsApp  — window.QUANTUM_WHATSAPP.number (internationale Form,
+       z. B. '491759913517'). Öffnet einen wa.me-Chat, optional mit
+       vorformulierter Nachricht. Kein Konto/kein SDK nötig.
+
+   (B) Chatwoot  — window.QUANTUM_CHATWOOT.baseUrl + .websiteToken aus
+       einem Chatwoot-Postfach vom Typ „Website".
+
+   Ist nichts konfiguriert, bleibt der Schalter ausgeblendet.
    ═══════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
 
+  const btn = document.getElementById('btn-livechat');
+  if (!btn) return;
+
+  /* ── (A) WhatsApp: einfachste Variante ───────────────────────── */
+  const wa = window.QUANTUM_WHATSAPP || {};
+  const waNumber = String(wa.number || '').replace(/\D/g, ''); /* nur Ziffern */
+  if (waNumber) {
+    const url = 'https://wa.me/' + waNumber
+      + (wa.text ? '?text=' + encodeURIComponent(String(wa.text)) : '');
+    btn.textContent = '💬 WHATSAPP';
+    btn.title = 'Frag uns per WhatsApp';
+    btn.hidden = false;
+    btn.addEventListener('click', function () {
+      window.open(url, '_blank', 'noopener');
+    });
+    return;
+  }
+
+  /* ── (B) Chatwoot: Website-Widget ────────────────────────────── */
   const cfg = window.QUANTUM_CHATWOOT || {};
   const baseUrl = String(cfg.baseUrl || '').replace(/\/+$/, '');
   const token = String(cfg.websiteToken || '').trim();
-  const btn = document.getElementById('btn-livechat');
 
-  /* Nicht konfiguriert → Schalter verstecken und aussteigen. */
   if (!baseUrl || !token) {
-    if (btn) btn.hidden = true;
+    btn.hidden = true;
     return;
   }
 
@@ -31,10 +49,9 @@
   );
 
   window.addEventListener('chatwoot:ready', function () {
-    if (btn) btn.classList.add('is-ready');
+    btn.classList.add('is-ready');
   });
 
-  /* Chatwoot-SDK nachladen und starten. */
   (function (d, t) {
     const g = d.createElement(t);
     const s = d.getElementsByTagName(t)[0];
@@ -49,11 +66,9 @@
     };
   })(document, 'script');
 
-  if (btn) {
-    btn.hidden = false;
-    btn.addEventListener('click', function () {
-      if (window.$chatwoot) window.$chatwoot.toggle('open');
-      else window.open(baseUrl, '_blank', 'noopener'); /* Fallback bis SDK bereit */
-    });
-  }
+  btn.hidden = false;
+  btn.addEventListener('click', function () {
+    if (window.$chatwoot) window.$chatwoot.toggle('open');
+    else window.open(baseUrl, '_blank', 'noopener'); /* Fallback bis SDK bereit */
+  });
 })();

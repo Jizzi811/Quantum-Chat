@@ -381,10 +381,17 @@
   <script src="js/app.js"></script>
   <script src="js/checkout.js"></script>
   <script src="js/landing.js"></script>
-  <!-- Live-Chat (Chatwoot): baseUrl + websiteToken aus deinem Chatwoot-Konto
-       eintragen, dann erscheint der 💬-LIVE-Schalter im Chatfenster.
-       Beide Felder leer lassen = Live-Chat aus. -->
+  <!-- Live-Chat-Schalter (💬) im Chatfenster. Zwei Optionen — die erste
+       ausgefüllte gewinnt:
+       (A) WhatsApp: Nummer in internationaler Form (Ländercode, ohne führende
+           0 und ohne + / Leerzeichen). Beispiel DE: 0175 9913517 → 491759913517
+       (B) Chatwoot: baseUrl + websiteToken aus einem „Website"-Postfach.
+       Alles leer = Schalter aus. -->
   <script>
+    window.QUANTUM_WHATSAPP = {
+      number: '491759913517',                        /* internationale Form, ohne + und ohne führende 0 */
+      text: 'Hallo, ich habe eine Frage zu Quantum ⚡'
+    };
     window.QUANTUM_CHATWOOT = {
       baseUrl: '',      /* z. B. 'https://app.chatwoot.com' */
       websiteToken: ''  /* Website-Token aus dem Chatwoot-Postfach */
