@@ -10,8 +10,8 @@ import {
   fetchModelIds,
   pickGeminiModel,
   envValue,
-  accessTokenList,
-  isValidAccessToken,
+  accessConfigured,
+  isValidAccessCredential,
   makeRateLimiter,
 } from './quantum-shared.js';
 
@@ -29,7 +29,7 @@ export default async function handler(req) {
   if (req.method !== 'POST') return jsonResponse(405, { error: 'Method not allowed' });
 
   const config = resolveProvider();
-  if (!config || accessTokenList().length === 0) {
+  if (!config || !accessConfigured()) {
     return jsonResponse(503, { error: 'Quantum AI is not fully configured in Netlify.' });
   }
 
@@ -37,7 +37,7 @@ export default async function handler(req) {
   const allowedOrigin = envValue('QUANTUM_ALLOWED_ORIGIN');
   if (allowedOrigin && origin !== allowedOrigin) return jsonResponse(403, { error: 'Origin not allowed.' });
   const provided = String(req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
-  if (!isValidAccessToken(provided)) return jsonResponse(401, { error: 'Quantum access code is invalid.' });
+  if (!isValidAccessCredential(provided)) return jsonResponse(401, { error: 'Quantum access code is invalid.' });
   if (!withinRateLimit(req.headers.get('x-nf-client-connection-ip') || 'unknown')) {
     return jsonResponse(429, { error: 'Too many AI requests. Please wait one minute.' });
   }

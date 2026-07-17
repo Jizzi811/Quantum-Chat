@@ -189,6 +189,64 @@ function isValidAccessToken(provided) {
   return accessTokenList().some((token) => safeEqual(value, token));
 }
 
+/* E-Mail-gebundene Konten: QUANTUM_ACCESS_ACCOUNTS listet "email:code"-Paare,
+   getrennt durch Komma, Semikolon oder Zeilenumbruch. Ein solcher Code ist NUR
+   zusammen mit der zugehörigen E-Mail gültig — so lässt sich jeder Code genau
+   einer Person zuordnen; die bloße Weitergabe des Codes reicht nicht.
+   E-Mail wird normalisiert (trim + lowercase); pro Eintrag der erste Doppel-
+   punkt trennt E-Mail (davor) von Code (danach). Deduped, ohne Leereinträge. */
+function accessAccounts() {
+  let rawList = String(process.env.QUANTUM_ACCESS_ACCOUNTS || '').trim();
+  if (rawList.toUpperCase().startsWith('QUANTUM_ACCESS_ACCOUNTS=')) {
+    rawList = rawList.slice('QUANTUM_ACCESS_ACCOUNTS='.length);
+  }
+  const accounts = [];
+  rawList.split(/[,;\n]/).forEach((entry) => {
+    const cleaned = entry.trim().replace(/^["']+|["']+$/g, '').trim();
+    const sep = cleaned.indexOf(':');
+    if (sep < 0) return;
+    const email = cleaned.slice(0, sep).trim().toLowerCase();
+    const code = cleaned.slice(sep + 1).trim();
+    if (!email || !code) return;
+    if (!accounts.some((a) => a.email === email && a.code === code)) {
+      accounts.push({ email, code });
+    }
+  });
+  return accounts;
+}
+
+/* Prüft ein E-Mail+Code-Paar gegen die Kontenliste (Code konstantzeitnah). */
+function isValidAccount(email, code) {
+  const normEmail = String(email || '').trim().toLowerCase();
+  const value = String(code || '');
+  if (!normEmail || !value) return false;
+  return accessAccounts().some((a) => a.email === normEmail && safeEqual(value, a.code));
+}
+
+/* Zugangsprüfung für eingehende Anfragen. Akzeptiert zwei Formen im Bearer:
+   - reiner Code (Master/Liste, abwärtskompatibel):        "code"
+   - E-Mail-gebundenes Konto (der Client kombiniert beim Login): "email|code"
+   Reihenfolge: erst reiner Code, dann Konto-Paar, dann Master-/Listen-Code,
+   der zusammen mit einer E-Mail geschickt wurde. */
+function isValidAccessCredential(bearer) {
+  const value = String(bearer || '');
+  if (!value) return false;
+  if (isValidAccessToken(value)) return true;
+  const sep = value.indexOf('|');
+  if (sep >= 0) {
+    const email = value.slice(0, sep);
+    const code = value.slice(sep + 1);
+    if (isValidAccount(email, code)) return true;
+    if (isValidAccessToken(code)) return true;
+  }
+  return false;
+}
+
+/* Ist überhaupt ein Zugang konfiguriert — reine Codes ODER E-Mail-Konten? */
+function accessConfigured() {
+  return accessTokenList().length > 0 || accessAccounts().length > 0;
+}
+
 /* Einfaches In-Memory-Rate-Limit pro Lambda-Instanz. */
 function makeRateLimiter(limit = 10, windowMs = 60000) {
   const requests = new Map();
@@ -212,5 +270,9 @@ module.exports = {
   safeEqual,
   accessTokenList,
   isValidAccessToken,
+  accessAccounts,
+  isValidAccount,
+  isValidAccessCredential,
+  accessConfigured,
   makeRateLimiter,
 };
