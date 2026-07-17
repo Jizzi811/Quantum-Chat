@@ -263,7 +263,8 @@
   justify-content: center;
 }
 
-#landing-token {
+#landing-token,
+#landing-email {
   flex: 1 1 220px;
   padding: 0.75rem 1rem;
   border-radius: 12px;
@@ -276,7 +277,14 @@
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-#landing-token:focus {
+#landing-email {
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 0.6rem;
+}
+
+#landing-token:focus,
+#landing-email:focus {
   border-color: var(--neon-cyan);
   box-shadow: 0 0 0 1px var(--neon-cyan), 0 0 18px rgba(0, 245, 255, 0.25);
 }

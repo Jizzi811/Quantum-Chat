@@ -150,6 +150,7 @@ window.Quantum = window.Quantum || {};
 
   const form = document.getElementById('landing-form');
   const tokenInput = document.getElementById('landing-token');
+  const emailInput = document.getElementById('landing-email');
   const hint = document.getElementById('landing-hint');
 
   function refreshHint() {
@@ -184,10 +185,16 @@ window.Quantum = window.Quantum || {};
     e.preventDefault();
     const token = tokenInput.value.trim();
     if (token && window.Quantum.ai && window.Quantum.ai.setAccess) {
-      window.Quantum.ai.setAccess(token);
+      /* Persönliche Codes sind an eine E-Mail gebunden: Client kombiniert
+         "email|code", das Gateway prüft das Paar. Ohne E-Mail bleibt es der
+         reine Code (Master-/Listen-Code, abwärtskompatibel). */
+      const email = emailInput ? emailInput.value.trim().toLowerCase() : '';
+      const credential = email ? email + '|' + token : token;
+      window.Quantum.ai.setAccess(credential);
       if (window.Quantum.ui) window.Quantum.ui.system('🔑 KI-Zugang gespeichert — Fragen im Chat gehen jetzt an das konfigurierte KI-Modell.');
     }
     tokenInput.value = '';
+    if (emailInput) emailInput.value = '';
     close();
   });
 

@@ -117,6 +117,23 @@
 
 .chat-window__menu-btn:hover { box-shadow: 0 0 12px rgba(255, 45, 247, 0.5); }
 
+.chat-window__live {
+  background: transparent;
+  border: 1px solid rgba(45, 255, 168, 0.45);
+  border-radius: 5px;
+  color: var(--neon-green);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  padding: 0.32rem 0.55rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.chat-window__live:hover { box-shadow: 0 0 12px rgba(45, 255, 168, 0.5); }
+.chat-window__live[hidden] { display: none; }
+
 /* ── Skill-Menü (Dropdown im Chatfenster) ────────────────────── */
 
 .skill-menu {

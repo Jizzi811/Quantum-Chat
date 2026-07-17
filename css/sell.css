@@ -67,8 +67,13 @@
 }
 
 .sell__cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
   width: 100%;
   min-height: 52px;
+  text-decoration: none;
   font-family: var(--font-display);
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -113,6 +118,66 @@
 
 .sell__note--error { color: var(--neon-magenta); }
 .sell__note--ok { color: var(--neon-green); }
+
+/* ── Alternative Zahlungsarten (PayPal, GoCardless) ───────────── */
+
+.sell__alt {
+  margin-top: 0.9rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--border-soft);
+}
+
+.sell__alt-label {
+  display: block;
+  text-align: center;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 0.6rem;
+}
+
+.sell__alt-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sell__altbtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 46px;
+  padding: 0 0.9rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.92rem;
+  letter-spacing: 0.04em;
+  text-align: center;
+  text-decoration: none;
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(0, 245, 255, 0.32);
+  border-radius: 12px;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.1s, background 0.2s;
+}
+
+.sell__altbtn:hover {
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 16px rgba(0, 245, 255, 0.3);
+  background: rgba(0, 245, 255, 0.06);
+}
+
+.sell__altbtn:active { transform: scale(0.99); }
+
+.sell__alt-note {
+  margin: 0.6rem 0 0;
+  text-align: center;
+  font-size: 0.76rem;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
 
 /* ── Rechtliche Links ─────────────────────────────────────────── */
 

@@ -11,7 +11,7 @@
    - QUANTUM_ALLOWED_ORIGIN Origin-Schutz (wie beim Chat-Gateway)
    ═══════════════════════════════════════════════════════════════ */
 
-const { envValue, accessTokenList, isValidAccessToken, makeRateLimiter } = require('./quantum-shared.js');
+const { envValue, accessConfigured, isValidAccessCredential, makeRateLimiter } = require('./quantum-shared.js');
 
 const TAVILY_URL = 'https://api.tavily.com/search';
 const UPSTREAM_TIMEOUT_MS = 8000;
@@ -38,7 +38,7 @@ function normalizeResults(data, max) {
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') return response(405, { error: 'Method not allowed' });
-  if (accessTokenList().length === 0) return response(503, { error: 'Quantum access code is not configured in Netlify.' });
+  if (!accessConfigured()) return response(503, { error: 'Quantum access code is not configured in Netlify.' });
 
   const apiKey = envValue('TAVILY_API_KEY');
   if (!apiKey) return response(503, { error: 'Websuche ist nicht konfiguriert (TAVILY_API_KEY fehlt in Netlify).' });
@@ -47,7 +47,7 @@ exports.handler = async (event) => {
   const allowedOrigin = envValue('QUANTUM_ALLOWED_ORIGIN');
   if (allowedOrigin && origin !== allowedOrigin) return response(403, { error: 'Origin not allowed.' });
   const provided = String(event.headers.authorization || '').replace(/^Bearer\s+/i, '');
-  if (!isValidAccessToken(provided)) return response(401, { error: 'Quantum access code is invalid.' });
+  if (!isValidAccessCredential(provided)) return response(401, { error: 'Quantum access code is invalid.' });
   if (!withinRateLimit(event.headers['x-nf-client-connection-ip'] || event.headers['client-ip'] || 'unknown')) {
     return response(429, { error: 'Too many search requests. Please wait one minute.' });
   }
