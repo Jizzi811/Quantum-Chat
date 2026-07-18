@@ -18,7 +18,10 @@ const { envValue, accessConfigured, isValidAccessCredential, makeRateLimiter } =
 
 const UPSTREAM_TIMEOUT_MS = 60000;
 const DEFAULT_MODEL = 'gemini-3.1-flash-image';
-const withinRateLimit = makeRateLimiter(6, 60000);
+/* Höheres Limit als bei Text: das Kurs-Studio erzeugt legitim einen Schwung
+   Bilder hintereinander (Cover + je Lektion). Der Client (course-studio.js)
+   drosselt zusätzlich und wiederholt bei 429 mit Wartezeit. */
+const withinRateLimit = makeRateLimiter(20, 60000);
 const ALLOWED_RATIOS = ['1:1', '3:4', '4:3', '9:16', '16:9'];
 
 /* Reine Helfer → per Unit-Test abgedeckt. */

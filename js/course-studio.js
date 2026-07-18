@@ -431,6 +431,8 @@ window.Quantum = window.Quantum || {};
     l.quiz = parsed.quiz; l.uebungen = parsed.uebungen;
   }
 
+  function sleep(ms) { return new Promise(function (resolve) { setTimeout(resolve, ms); }); }
+
   async function elaborateCourse(course, params, hooks) {
     params = params || {}; hooks = hooks || {};
     function cancelled() { return typeof hooks.shouldCancel === 'function' && hooks.shouldCancel(); }
@@ -469,25 +471,40 @@ window.Quantum = window.Quantum || {};
       errors.push('Begleitmaterial: ' + (e.message || 'Fehler'));
     }
 
-    // Phase 2c: Bilder (optional, sequenziell, best effort)
+    // Phase 2c: Bilder (optional, sequenziell, mit Drosselung + Retry bei Limit)
     if (params.bilder && window.Quantum.imageStudio && window.Quantum.imageStudio.generate) {
+      // Wiederholt eine Bild-Anfrage, wenn das Rate-Limit (429) greift: kurz
+      // warten und erneut versuchen, statt das Bild sofort zu verwerfen.
+      var retryWaits = [12000, 20000, 30000, 45000];
+      var generateImage = async function (prompt, idx, total) {
+        for (var attempt = 0; ; attempt++) {
+          try {
+            return await window.Quantum.imageStudio.generate({ prompt: prompt, aspectRatio: '16:9' });
+          } catch (e) {
+            var limited = e && (e.status === 429 || /zu viele|too many|rate|limit/i.test(e.message || ''));
+            if (!limited || attempt >= retryWaits.length || cancelled()) throw e;
+            progress('Bild ' + (idx + 1) + '/' + total + ' — kurz warten (Limit) …', idx, total);
+            await sleep(retryWaits[attempt]);
+          }
+        }
+      };
+
       var targets = [{ cover: true }].concat(lessons);
       for (var j = 0; j < targets.length; j++) {
         if (cancelled()) return { errors: errors, cancelled: true };
         progress('Bild ' + (j + 1) + '/' + targets.length, j, targets.length);
         try {
-          if (targets[j].cover) {
-            var cres = await window.Quantum.imageStudio.generate({ prompt: coverPrompt(course), aspectRatio: '16:9' });
-            course.cover = cres.image;
-          } else {
-            var p = targets[j];
-            var lz = course.module[p.mi].lektionen[p.li];
-            var ires = await window.Quantum.imageStudio.generate({ prompt: lessonImagePrompt(course, p.mi, p.li), aspectRatio: '16:9' });
-            lz.bild = ires.image;
-          }
+          var imgPrompt = targets[j].cover
+            ? coverPrompt(course)
+            : lessonImagePrompt(course, targets[j].mi, targets[j].li);
+          var res = await generateImage(imgPrompt, j, targets.length);
+          if (targets[j].cover) course.cover = res.image;
+          else course.module[targets[j].mi].lektionen[targets[j].li].bild = res.image;
         } catch (e) {
           errors.push('Bild ' + (j + 1) + ': ' + (e.message || 'Fehler'));
         }
+        // Bursts glätten: kleine Pause zwischen den Bildern schont das Limit.
+        if (j < targets.length - 1) await sleep(1500);
       }
     }
 

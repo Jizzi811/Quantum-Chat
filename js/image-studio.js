@@ -25,7 +25,9 @@ window.Quantum = window.Quantum || {};
     let data = {};
     try { data = await res.json(); } catch (_) { /* unten */ }
     if (!res.ok || !data.image) {
-      throw new Error(data.error || ('Bilddienst-Fehler (HTTP ' + res.status + ').'));
+      const err = new Error(data.error || ('Bilddienst-Fehler (HTTP ' + res.status + ').'));
+      err.status = res.status;
+      throw err;
     }
     return data;
   }
